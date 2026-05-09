@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JIET Smart Bus | Futuristic Tracker Pro</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- Tabler Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+
+    <!-- External Styles -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="logo-container" title="JIET Smart Bus System" onclick="switchView('dashboard')">
+            <svg viewBox="0 0 100 115" width="60" height="69">
+                <polygon points="50,5 95,30 95,85 50,110 5,85 5,30" fill="none" stroke="#FFB300" stroke-width="2"/>
+                <polygon points="50,10 90,32 90,83 50,105 10,83 10,32" fill="#0B0F19" stroke="#FFB300" stroke-width="1"/>
+                <rect x="25" y="45" width="50" height="25" rx="3" fill="#FFB300" />
+                <rect x="30" y="48" width="10" height="8" rx="1" fill="white" opacity="0.8" />
+                <rect x="42" y="48" width="10" height="8" rx="1" fill="white" opacity="0.8" />
+                <rect x="54" y="48" width="10" height="8" rx="1" fill="white" opacity="0.8" />
+                <rect x="66" y="48" width="6" height="8" rx="1" fill="white" opacity="0.8" />
+                <circle cx="35" cy="70" r="6" fill="black" stroke="#FFB300" stroke-width="2"/>
+                <circle cx="35" cy="70" r="2" fill="#FFB300"/>
+                <circle cx="65" cy="70" r="6" fill="black" stroke="#FFB300" stroke-width="2"/>
+                <circle cx="65" cy="70" r="2" fill="#FFB300"/>
+                <path d="M50 15 C42 15 35 22 35 30 C35 40 50 55 50 55 C50 55 65 40 65 30 C65 22 58 15 50 15 Z" fill="#FFB300" />
+                <circle cx="50" cy="30" r="5" fill="#0B0F19" />
+                <circle cx="50" cy="30" r="2" fill="#FFB300" />
+            </svg>
+        </div>
+        <div class="nav-links">
+            <div class="nav-item active" data-target="dashboard" title="Dashboard"><i class="ti ti-layout-dashboard"></i></div>
+            <div class="nav-item" data-target="map" title="Live Map"><i class="ti ti-map-pin-cog"></i></div>
+            <div class="nav-item" data-target="students" title="Students"><i class="ti ti-users-group"></i></div>
+            <div class="nav-item" data-target="attendance" title="Attendance"><i class="ti ti-calendar-stats"></i></div>
+            <div class="nav-item" data-target="routes" title="Routes"><i class="ti ti-map-route"></i></div>
+            <div class="nav-item" data-target="analytics" title="Analytics"><i class="ti ti-chart-dots"></i></div>
+            <div class="nav-item" data-target="drivers" title="Drivers"><i class="ti ti-steering-wheel"></i></div>
+            <div class="nav-item" data-target="alerts" title="Alerts"><i class="ti ti-bell-ringing"></i></div>
+            <div class="nav-item" data-target="settings" title="Settings"><i class="ti ti-settings-automation"></i></div>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <!-- Top Bar (Shared across all views) -->
+        <header class="top-bar">
+            <div class="page-info">
+                <h1 id="page-title">JIET SMART BUS SYSTEM</h1>
+                <p id="current-date"><i class="ti ti-calendar-event"></i> Loading system time...</p>
+            </div>
+            
+            <div class="header-actions">
+                <div class="role-tabs">
+                    <div class="role-tab active" onclick="switchRole('Admin', this)">Admin</div>
+                    <div class="role-tab" onclick="switchRole('Student', this)">Student</div>
+                    <div class="role-tab" onclick="switchRole('Parent', this)">Parent</div>
+                    <div class="role-tab" onclick="switchRole('Driver', this)">Driver</div>
+                </div>
+                
+                <button class="sos-btn" onclick="triggerSOS()">
+                    <i class="ti ti-alert-octagon"></i>
+                    SOS EMERGENCY
+                </button>
+            </div>
+        </header>
+
+        <!-- VIEWS CONTAINER -->
+        <div id="views-container">
+            
+            <!-- ================= DASHBOARD VIEW ================= -->
+            <section id="view-dashboard" class="app-view active">
+                <div class="stats-grid">
+                    <div class="stat-card blue">
+                        <div class="stat-icon"><i class="ti ti-bus-stop"></i></div>
+                        <div class="stat-value orbitron">12</div>
+                        <div class="stat-label">Active Buses</div>
+                    </div>
+                    <div class="stat-card cyan">
+                        <div class="stat-icon"><i class="ti ti-school-bell"></i></div>
+                        <div class="stat-value orbitron">847</div>
+                        <div class="stat-label">Students Tracked</div>
+                    </div>
+                    <div class="stat-card purple">
+                        <div class="stat-icon"><i class="ti ti-broadcast"></i></div>
+                        <div class="stat-value orbitron">98.3%</div>
+                        <div class="stat-label">GPS Sync Rate</div>
+                    </div>
+                    <div class="stat-card orange">
+                        <div class="stat-icon"><i class="ti ti-hourglass-high"></i></div>
+                        <div id="eta-timer" class="stat-value orbitron">02:45</div>
+                        <div class="stat-label">Main Gate Arrival</div>
+                    </div>
+                </div>
+
+                <div class="content-grid">
+                    <div class="card" style="cursor: pointer" onclick="switchView('map')">
+                        <div class="card-header">
+                            <h2 class="card-title orbitron">Geospatial Intelligence Map</h2>
+                            <div class="live-badge"><div class="dot"></div>DATA FEED: ACTIVE</div>
+                        </div>
+                        <div class="map-container">
+                            <div class="map-scanline"></div>
+                            <svg class="map-svg" viewBox="0 0 680 300">
+                                <defs>
+                                    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+                                        <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(255, 179, 0, 0.05)" stroke-width="1"/>
+                                    </pattern>
+                                </defs>
+                                <rect width="100%" height="100%" fill="url(#grid)" />
+                                <path class="route-line" d="M 50 180 Q 150 100 300 120 T 550 200" stroke="var(--primary)" />
+                                <path class="route-line" d="M 120 50 L 250 80 L 400 60 L 580 40" stroke="var(--secondary)" />
+                                <g transform="translate(340, 150)">
+                                    <circle r="6" fill="#FF3B3B" />
+                                    <circle r="12" fill="none" stroke="#FF3B3B" stroke-width="1">
+                                        <animate attributeName="r" from="6" to="35" dur="3s" repeatCount="indefinite" />
+                                        <animate attributeName="opacity" from="1" to="0" dur="3s" repeatCount="indefinite" />
+                                    </circle>
+                                    <text y="40" text-anchor="middle" fill="#FF3B3B" font-family="Orbitron" font-size="10" font-weight="bold">JIET HQ</text>
+                                </g>
+                                <g style="animation: busMov 20s linear infinite;">
+                                    <path class="map-bus-marker" d="M-8,-10 L8,-10 L12,-4 L12,8 L-12,8 L-12,-4 Z" fill="var(--primary)" />
+                                </g>
+                                <g style="animation: busMov2 25s ease-in-out infinite;">
+                                    <path class="map-bus-marker" d="M-8,-10 L8,-10 L12,-4 L12,8 L-12,8 L-12,-4 Z" fill="var(--secondary)" />
+                                </g>
+                            </svg>
+                            <div class="map-footer">
+                                <span><i class="ti ti-satellite"></i> Uplink Active</span>
+                                <span>Click to expand map <i class="ti ti-arrow-right"></i></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h2 class="card-title orbitron">Fleet Operation Center</h2>
+                        </div>
+                        <div class="fleet-list">
+                            <div class="bus-row selected" onclick="selectBus(this, 'JT-01')">
+                                <div class="bus-info">
+                                    <div class="bus-avatar-logo"><i class="ti ti-bus" style="color:var(--primary)"></i></div>
+                                    <div class="bus-name-box"><h4>JT-01 ALPHA</h4><p>Sector A-10 Route</p></div>
+                                </div>
+                                <span class="status-pill moving">Moving</span><div class="bus-speed">42 km/h</div>
+                            </div>
+                            <div class="bus-row" onclick="selectBus(this, 'JT-02')">
+                                <div class="bus-info">
+                                    <div class="bus-avatar-logo"><i class="ti ti-bus" style="color:var(--secondary)"></i></div>
+                                    <div class="bus-name-box"><h4>JT-02 BETA</h4><p>Sector B-22 Route</p></div>
+                                </div>
+                                <span class="status-pill moving">Moving</span><div class="bus-speed">38 km/h</div>
+                            </div>
+                            <div class="bus-row" onclick="selectBus(this, 'JT-03')">
+                                <div class="bus-info">
+                                    <div class="bus-avatar-logo"><i class="ti ti-bus" style="color:var(--accent)"></i></div>
+                                    <div class="bus-name-box"><h4>JT-03 GAMMA</h4><p>Sector C-05 Route</p></div>
+                                </div>
+                                <span class="status-pill stopped">At Stop</span><div class="bus-speed">0 km/h</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= MAP VIEW ================= -->
+            <section id="view-map" class="app-view">
+                <div class="view-header">
+                    <div>
+                        <h2 class="orbitron text-primary">Global Tactical Map</h2>
+                        <p class="text-muted">Live 360° view of all active transit assets</p>
+                    </div>
+                    <div class="view-actions">
+                        <button class="btn-action" onclick="showNotification('Radar', 'Scanning for nearby assets...', 'info')"><i class="ti ti-radar"></i> Ping Radar</button>
+                    </div>
+                </div>
+                <div class="card" style="padding: 0; height: 600px; border: 1px solid var(--primary);">
+                    <div class="map-container" style="height: 100%; border-radius: 28px;">
+                        <div class="map-scanline"></div>
+                        <div class="map-overlay-panel">
+                            <h4 class="orbitron">Active Nodes</h4>
+                            <div class="node-list" id="map-node-list">
+                                <!-- Generated by JS -->
+                            </div>
+                        </div>
+                        <svg class="map-svg" viewBox="0 0 1200 600">
+                            <defs>
+                                <pattern id="gridLarge" width="60" height="60" patternUnits="userSpaceOnUse">
+                                    <path d="M 60 0 L 0 0 0 60" fill="none" stroke="rgba(255, 179, 0, 0.05)" stroke-width="1"/>
+                                </pattern>
+                            </defs>
+                            <rect width="100%" height="100%" fill="url(#gridLarge)" />
+                            
+                            <!-- Campus Target -->
+                            <g transform="translate(600, 300)">
+                                <circle r="10" fill="rgba(255, 59, 59, 0.2)" />
+                                <circle r="5" fill="#FF3B3B" />
+                                <circle r="40" fill="none" stroke="#FF3B3B" stroke-width="1">
+                                    <animate attributeName="r" from="10" to="100" dur="4s" repeatCount="indefinite" />
+                                    <animate attributeName="opacity" from="1" to="0" dur="4s" repeatCount="indefinite" />
+                                </circle>
+                            </g>
+
+                            <!-- Bus 1 -->
+                            <g style="animation: busMov 20s linear infinite;">
+                                <circle cx="0" cy="0" r="30" fill="rgba(255, 179, 0, 0.1)" />
+                                <path class="map-bus-marker" d="M-10,-12 L10,-12 L15,-5 L15,10 L-15,10 L-15,-5 Z" fill="var(--primary)" />
+                            </g>
+                        </svg>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= STUDENTS VIEW ================= -->
+            <section id="view-students" class="app-view">
+                <div class="view-header">
+                    <div>
+                        <h2 class="orbitron text-primary">Student Database</h2>
+                        <p class="text-muted">Live tracking and management of all registered passengers</p>
+                    </div>
+                    <div class="view-actions">
+                        <div class="search-box">
+                            <i class="ti ti-search"></i>
+                            <input type="text" id="student-search" placeholder="Search ID, Name or Route...">
+                        </div>
+                        <select class="filter-select" id="route-filter">
+                            <option value="all">All Routes</option>
+                            <option value="JT-01">JT-01 ALPHA</option>
+                            <option value="JT-02">JT-02 BETA</option>
+                            <option value="JT-03">JT-03 GAMMA</option>
+                        </select>
+                        <button class="btn-action" onclick="showNotification('Export', 'Exporting student manifest...', 'info')"><i class="ti ti-download"></i></button>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Student ID</th>
+                                    <th>Name</th>
+                                    <th>Assigned Route</th>
+                                    <th>Pickup Point</th>
+                                    <th>Current Status</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="students-tbody">
+                                <!-- Populated dynamically by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= ATTENDANCE VIEW ================= -->
+            <section id="view-attendance" class="app-view">
+                <div class="view-header">
+                    <div>
+                        <h2 class="orbitron text-primary">Biometric Attendance</h2>
+                        <p class="text-muted">RFID and Facial Recognition logs</p>
+                    </div>
+                    <button class="btn-action" onclick="simulateScan()"><i class="ti ti-scan"></i> Force Scan</button>
+                </div>
+                <div class="grid-2">
+                    <div class="card">
+                        <h3 class="orbitron mb-15">Live Scan Feed</h3>
+                        <div id="scan-feed" class="scan-feed">
+                            <!-- JS injected -->
+                        </div>
+                    </div>
+                    <div class="card">
+                        <h3 class="orbitron mb-15">Daily Progress</h3>
+                        <div class="attendance-ring-container">
+                            <div class="circular-progress">
+                                <div class="inner-circle orbitron">92%</div>
+                            </div>
+                            <div class="metrics-list mt-20">
+                                <div class="metric"><span class="dot" style="background:var(--primary)"></span> Present: 780</div>
+                                <div class="metric"><span class="dot" style="background:var(--danger)"></span> Absent: 45</div>
+                                <div class="metric"><span class="dot" style="background:var(--text-muted)"></span> Unverified: 22</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= ROUTES VIEW ================= -->
+            <section id="view-routes" class="app-view">
+                <div class="view-header">
+                    <div>
+                        <h2 class="orbitron text-primary">Transit Corridors</h2>
+                        <p class="text-muted">Manage operational paths and traffic optimization</p>
+                    </div>
+                    <button class="btn-action" onclick="openAddRouteModal()"><i class="ti ti-plus"></i> Add Route</button>
+                </div>
+                <div class="route-grid" id="routes-container">
+                    <!-- JS Injected Routes -->
+                </div>
+            </section>
+
+            <!-- ================= ANALYTICS VIEW ================= -->
+            <section id="view-analytics" class="app-view">
+                <div class="view-header">
+                    <div>
+                        <h2 class="orbitron text-primary">System Analytics</h2>
+                        <p class="text-muted">Performance metrics and fuel efficiency</p>
+                    </div>
+                </div>
+                <div class="card mb-20">
+                    <h3 class="orbitron mb-15">Fleet Efficiency (Past 7 Days)</h3>
+                    <div class="chart-container">
+                        <div class="chart-bar-wrap"><div class="chart-bar" style="height: 60%;"></div><span>Mon</span></div>
+                        <div class="chart-bar-wrap"><div class="chart-bar" style="height: 80%;"></div><span>Tue</span></div>
+                        <div class="chart-bar-wrap"><div class="chart-bar" style="height: 50%;"></div><span>Wed</span></div>
+                        <div class="chart-bar-wrap"><div class="chart-bar" style="height: 90%; background: var(--accent);"></div><span>Thu</span></div>
+                        <div class="chart-bar-wrap"><div class="chart-bar" style="height: 70%;"></div><span>Fri</span></div>
+                        <div class="chart-bar-wrap"><div class="chart-bar" style="height: 40%;"></div><span>Sat</span></div>
+                        <div class="chart-bar-wrap"><div class="chart-bar" style="height: 30%;"></div><span>Sun</span></div>
+                    </div>
+                </div>
+                <div class="grid-3">
+                    <div class="card text-center"><i class="ti ti-gas-station" style="font-size:30px;color:var(--primary)"></i><h2 class="orbitron mt-10">452 L</h2><p>Fuel Saved</p></div>
+                    <div class="card text-center"><i class="ti ti-clock-check" style="font-size:30px;color:var(--accent)"></i><h2 class="orbitron mt-10">98%</h2><p>On-Time Rate</p></div>
+                    <div class="card text-center"><i class="ti ti-brand-carbon" style="font-size:30px;color:var(--secondary)"></i><h2 class="orbitron mt-10">-12%</h2><p>Carbon Emission</p></div>
+                </div>
+            </section>
+
+            <!-- ================= DRIVERS VIEW ================= -->
+            <section id="view-drivers" class="app-view">
+                <div class="view-header">
+                    <div>
+                        <h2 class="orbitron text-primary">Driver Roster</h2>
+                        <p class="text-muted">Fleet operator profiles and ratings</p>
+                    </div>
+                </div>
+                <div class="driver-grid" id="drivers-container">
+                    <!-- JS injected -->
+                </div>
+            </section>
+
+            <!-- ================= ALERTS VIEW ================= -->
+            <section id="view-alerts" class="app-view">
+                <div class="view-header">
+                    <div>
+                        <h2 class="orbitron text-danger">Incident Logs</h2>
+                        <p class="text-muted">System-wide event tracking and security alerts</p>
+                    </div>
+                    <button class="btn-action" style="background: rgba(255, 59, 59, 0.2); color: var(--danger);"><i class="ti ti-trash"></i> Clear Logs</button>
+                </div>
+                <div class="card">
+                    <div class="timeline" id="alerts-timeline">
+                        <!-- JS injected -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= SETTINGS VIEW ================= -->
+            <section id="view-settings" class="app-view">
+                <div class="view-header">
+                    <div>
+                        <h2 class="orbitron text-primary">Core Configuration</h2>
+                        <p class="text-muted">System preferences and hardware calibration</p>
+                    </div>
+                </div>
+                <div class="grid-2">
+                    <div class="card">
+                        <h3 class="orbitron mb-15">Autonomy & AI</h3>
+                        <div class="setting-row">
+                            <span>Auto-Reroute on Traffic</span>
+                            <label class="toggle"><input type="checkbox" checked><span class="slider"></span></label>
+                        </div>
+                        <div class="setting-row">
+                            <span>Predictive Maintenance</span>
+                            <label class="toggle"><input type="checkbox" checked><span class="slider"></span></label>
+                        </div>
+                        <div class="setting-row">
+                            <span>Facial Recognition Security</span>
+                            <label class="toggle"><input type="checkbox"><span class="slider"></span></label>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <h3 class="orbitron mb-15">Notifications</h3>
+                        <div class="setting-row">
+                            <span>SMS to Parents on Arrival</span>
+                            <label class="toggle"><input type="checkbox" checked><span class="slider"></span></label>
+                        </div>
+                        <div class="setting-row">
+                            <span>Push Emergency Alerts</span>
+                            <label class="toggle"><input type="checkbox" checked><span class="slider"></span></label>
+                        </div>
+                        <div class="setting-row">
+                            <span>Weekly Analytics Report</span>
+                            <label class="toggle"><input type="checkbox"><span class="slider"></span></label>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </div>
+    </main>
+
+    <!-- Student Details Modal -->
+    <div id="student-modal" class="modal-overlay">
+        <div class="modal-card card">
+            <button class="close-modal" onclick="closeModal()"><i class="ti ti-x"></i></button>
+            <div class="modal-header">
+                <div class="student-avatar orbitron" id="modal-initial">S</div>
+                <div class="student-title-box">
+                    <h3 id="modal-name" class="orbitron">Student Name</h3>
+                    <p id="modal-id">ID: 12345</p>
+                </div>
+                <span class="status-badge" id="modal-status">On Board</span>
+            </div>
+            
+            <div class="modal-grid">
+                <div class="modal-info-group">
+                    <label>Assigned Route</label>
+                    <div class="info-val" id="modal-route">JT-01 ALPHA</div>
+                </div>
+                <div class="modal-info-group">
+                    <label>Designated Stop</label>
+                    <div class="info-val" id="modal-stop">Sector A-10</div>
+                </div>
+                <div class="modal-info-group">
+                    <label>Boarding Time</label>
+                    <div class="info-val" id="modal-time">07:15 AM</div>
+                </div>
+                <div class="modal-info-group">
+                    <label>Guardian</label>
+                    <div class="info-val" id="modal-parent">John Doe</div>
+                </div>
+                <div class="modal-info-group">
+                    <label>Contact Number</label>
+                    <div class="info-val" id="modal-contact">+91 9876543210</div>
+                </div>
+            </div>
+
+            <div class="modal-map-preview">
+                <div class="scanline"></div>
+                <span><i class="ti ti-map-pin"></i> Live Location Pinged</span>
+            </div>
+
+            <div class="modal-actions">
+                <button class="btn-primary" onclick="showNotification('Communications', 'Establishing secure line to Guardian...', 'info')">
+                    <i class="ti ti-phone-calling"></i> Contact Guardian
+                </button>
+                <button class="btn-danger" onclick="triggerSOS()">
+                    <i class="ti ti-alert-triangle"></i> Flag Issue
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Route Modal -->
+    <div id="add-route-modal" class="modal-overlay">
+        <div class="modal-card card">
+            <button class="close-modal" onclick="closeAddRouteModal()"><i class="ti ti-x"></i></button>
+            <div class="modal-header">
+                <div class="student-avatar orbitron" style="background: rgba(0, 255, 209, 0.1); color: var(--accent); border-color: var(--accent);">
+                    <i class="ti ti-route"></i>
+                </div>
+                <div class="student-title-box">
+                    <h3 class="orbitron" style="font-size: 18px;">Create New Route</h3>
+                    <p style="font-size: 11px;">Define new transit corridor parameters</p>
+                </div>
+            </div>
+            
+            <form id="add-route-form" onsubmit="submitNewRoute(event)">
+                <div class="mb-15">
+                    <label style="display:block; font-size:10px; color:var(--text-muted); text-transform:uppercase; margin-bottom:5px;">Route Identifier</label>
+                    <input type="text" id="new-route-id" required placeholder="e.g. JT-05 EPSILON" class="form-input">
+                </div>
+                <div class="grid-2 mb-15">
+                    <div>
+                        <label style="display:block; font-size:10px; color:var(--text-muted); text-transform:uppercase; margin-bottom:5px;">Start Point</label>
+                        <input type="text" id="new-route-start" required placeholder="e.g. Sector D-12" class="form-input">
+                    </div>
+                    <div>
+                        <label style="display:block; font-size:10px; color:var(--text-muted); text-transform:uppercase; margin-bottom:5px;">End Point</label>
+                        <input type="text" id="new-route-end" required value="JIET Campus" class="form-input">
+                    </div>
+                </div>
+                <div class="grid-2 mb-20">
+                    <div>
+                        <label style="display:block; font-size:10px; color:var(--text-muted); text-transform:uppercase; margin-bottom:5px;">Total Distance</label>
+                        <input type="text" id="new-route-dist" required placeholder="e.g. 15.2 km" class="form-input">
+                    </div>
+                    <div>
+                        <label style="display:block; font-size:10px; color:var(--text-muted); text-transform:uppercase; margin-bottom:5px;">Est. Time</label>
+                        <input type="text" id="new-route-time" required placeholder="e.g. 45 mins" class="form-input">
+                    </div>
+                </div>
+                
+                <div class="modal-actions">
+                    <button type="button" class="btn-danger" onclick="closeAddRouteModal()">Cancel</button>
+                    <button type="submit" class="btn-primary" style="background: rgba(0, 255, 209, 0.1); color: var(--accent); border-color: var(--accent);">
+                        <i class="ti ti-rocket"></i> Deploy Route
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Notification Popup -->
+    <div id="notif-popup" class="notification-popup">
+        <div id="notif-icon" class="notif-icon">
+            <i class="ti ti-info-square-rounded"></i>
+        </div>
+        <div class="notif-body">
+            <h5 id="notif-title" class="orbitron">ALERT</h5>
+            <p id="notif-msg">System message content.</p>
+        </div>
+    </div>
+
+    <!-- 1. Supabase CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <!-- 2. Database Config & Client Initialization -->
+    <script src="config/config.js"></script>
+    <script src="db/supabaseClient.js"></script>
+
+    <!-- 3. Main App Logic -->
+    <script src="script.js"></script>
+</body>
+</html>
