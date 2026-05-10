@@ -98,3 +98,5 @@ INSERT INTO public.students (id, name, route, stop, status, board_time, parent, 
 ('STU1002', 'Aditya Singh', 'JT-03 GAMMA', 'Sector C-05', 'On Board', '07:45 AM', 'Guardian 2', '+91 9988776655'),
 ('STU1003', 'Vihaan Patel', 'JT-01 ALPHA', 'Main Gate', 'Missed', '07:50 AM', 'Guardian 3', '+91 9444455555'),
 ('STU1004', 'Arjun Kumar', 'JT-02 BETA', 'Sector B-22', 'On Board', '07:30 AM', 'Guardian 4', '+91 9111122222');
+
+-- End of schema file
