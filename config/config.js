@@ -3,6 +3,6 @@
 // You can find these in your Supabase Dashboard under Settings > API.
 
 const CONFIG = {
-    SUPABASE_URL: "https://your-project-id.supabase.co",
-    SUPABASE_ANON_KEY: "eyJhbGci...your-anon-key-here"
+    SUPABASE_URL: "https://gnibaqhudqhxvzanxmhv.supabase.co",
+    SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImduaWJhcWh1ZHFoeHZ6YW54bWh2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgzMDY2MDYsImV4cCI6MjA5Mzg4MjYwNn0.NKiVBgVWpYfvR25fPcTT1uFAo3jAk4A2I-nHpFCvv28"
 };

@@ -358,9 +358,50 @@ function render(){
 
 subscribe(render);
 setInterval(()=>{const c=document.getElementById('live-clock');if(c)c.textContent=new Date().toLocaleTimeString();},1000);
-window.addEventListener('DOMContentLoaded',()=>{
+window.addEventListener('DOMContentLoaded', async ()=>{
   render(); startSimulation();
-  setTimeout(()=>toast('🚀 System Online','JIET Smart Bus v3.0 — GPS Active','green'),800);
-  setTimeout(()=>toast('📍 Stand Update','Bus RJ14-07 at Stand B2 — Boarding open','blue'),2200);
-  setTimeout(()=>addAlert('✅ Morning fleet initialized — All diagnostics green','blue'),3000);
+  
+  // Custom Supabase Integration Logic
+  setTimeout(()=>toast('🔄 Syncing', 'Connecting to Supabase...', 'orange'), 500);
+  
+  if (typeof supabaseDb !== 'undefined') {
+    try {
+      const { data: routes, error } = await supabaseDb.from('routes').select('*');
+      if (error) throw error;
+      
+      if (routes && routes.length > 0) {
+        toast('✅ Database Synced', `Loaded ${routes.length} live routes from Supabase!`, 'green');
+        console.log("Supabase Routes:", routes);
+        
+        // Add Supabase routes to the frontend UI
+        routes.forEach((r, idx) => {
+           const exists = STATE.buses.find(b => b.route === r.id);
+           if (!exists) {
+              STATE.buses.push({
+                 id: 'DB-BUS' + (idx+1),
+                 route: r.id,
+                 routeName: r.end_point,
+                 driver: 'Assigned by DB',
+                 stand: 'Main Gate',
+                 status: r.status === 'Optimal' ? 'En Route' : 'Parked',
+                 pax: 0, cap: 45, delay: 0, departure: 0,
+                 lat: 26.2920 + (Math.random()-0.5)*0.01,
+                 lng: 73.0212 + (Math.random()-0.5)*0.01,
+                 speed: 0, emergency: false, breakdown: false, deviation: false, tripActive: false,
+                 routeKey: 'Route 1'
+              });
+           }
+        });
+        render(); // Re-render the UI with new data
+      } else {
+        toast('ℹ️ Database Empty', 'No routes found in Supabase. Using local simulation data.', 'blue');
+      }
+    } catch (err) {
+      console.error("Supabase sync error:", err);
+      toast('❌ Sync Failed', 'Could not connect to database. Check API keys.', 'red');
+    }
+  }
+
+  setTimeout(()=>toast('🚀 System Online','JIET Smart Bus v3.0 — GPS Active','green'), 2500);
+  setTimeout(()=>addAlert('✅ Morning fleet initialized — All diagnostics green','blue'), 5000);
 });
