@@ -1,0 +1,1681 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NexusOS — Smart Dashboard</title>
+  <meta name="description" content="Futuristic SaaS dashboard powered by React and Tailwind CSS with glassmorphism design." />
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=JetBrains+Mono:wght@300;400;500;600&display=swap" rel="stylesheet" />
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            neon:    '#00b4ff',
+            purple:  '#8b5cf6',
+            dark:    '#050914',
+            card:    'rgba(10,16,35,0.7)',
+          },
+          fontFamily: {
+            mono:    ['"JetBrains Mono"', 'monospace'],
+            heading: ['Rajdhani', 'sans-serif'],
+          },
+          boxShadow: {
+            neon:   '0 0 18px rgba(0,180,255,0.35)',
+            purple: '0 0 18px rgba(139,92,246,0.35)',
+          },
+        },
+      },
+    };
+  </script>
+
+  <!-- React + Babel -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #050914; font-family: 'JetBrains Mono', monospace; }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: #0a1023; }
+    ::-webkit-scrollbar-thumb { background: #00b4ff44; border-radius: 4px; }
+
+    /* Glass card */
+    .glass {
+      background: rgba(10,16,35,0.7);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(0,180,255,0.12);
+    }
+
+    /* Neon glow text */
+    .glow-blue  { text-shadow: 0 0 12px rgba(0,180,255,0.8); }
+    .glow-purple{ text-shadow: 0 0 12px rgba(139,92,246,0.8); }
+
+    /* Animated gradient border */
+    .border-neon {
+      position: relative;
+    }
+    .border-neon::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      padding: 1px;
+      background: linear-gradient(135deg, #00b4ff, #8b5cf6);
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+      pointer-events: none;
+    }
+
+    /* Sidebar nav active */
+    .nav-active {
+      background: linear-gradient(90deg, rgba(0,180,255,0.15), transparent);
+      border-left: 2px solid #00b4ff;
+    }
+
+    /* Pulse dot */
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50%       { opacity: 0.4; transform: scale(0.7); }
+    }
+    .pulse { animation: pulse-dot 1.6s ease-in-out infinite; }
+
+    /* Progress bar shimmer */
+    @keyframes shimmer {
+      0%   { background-position: -200% center; }
+      100% { background-position:  200% center; }
+    }
+    .shimmer-bar {
+      background: linear-gradient(90deg, #00b4ff 0%, #8b5cf6 50%, #00b4ff 100%);
+      background-size: 200% auto;
+      animation: shimmer 2.5s linear infinite;
+    }
+
+    /* Hover lift */
+    .lift { transition: transform 0.25s ease, box-shadow 0.25s ease; }
+    .lift:hover { transform: translateY(-3px); box-shadow: 0 8px 32px rgba(0,180,255,0.2); }
+
+    /* Sidebar width */
+    #sidebar { width: 230px; min-width: 230px; }
+
+    /* Compound map slot hover */
+    .bus-slot { transition: transform 0.18s ease, filter 0.18s ease; cursor: pointer; }
+    .bus-slot:hover { transform-origin: center; }
+
+    /* Selected slot neon pulse ring */
+    @keyframes neon-ring {
+      0%,100% { stroke-opacity: 1;  stroke-width: 3; }
+      50%      { stroke-opacity: 0.3; stroke-width: 6; }
+    }
+    .slot-ring { animation: neon-ring 1.2s ease-in-out infinite; }
+
+    /* Road dashes */
+    @keyframes road-flow {
+      from { stroke-dashoffset: 0; }
+      to   { stroke-dashoffset: -40; }
+    }
+    .road-dash { animation: road-flow 1.4s linear infinite; }
+
+    /* Slide-in drawer */
+    @keyframes slide-in {
+      from { transform: translateX(100%); opacity: 0; }
+      to   { transform: translateX(0);    opacity: 1; }
+    }
+    @keyframes slide-out {
+      from { transform: translateX(0);    opacity: 1; }
+      to   { transform: translateX(100%); opacity: 0; }
+    }
+    .drawer-enter { animation: slide-in  0.32s cubic-bezier(0.22,1,0.36,1) forwards; }
+    .drawer-exit  { animation: slide-out 0.24s cubic-bezier(0.55,0,1,0.45) forwards; }
+
+    /* Drawer backdrop */
+    @keyframes fade-in  { from{opacity:0} to{opacity:1} }
+    @keyframes fade-out { from{opacity:1} to{opacity:0} }
+    .backdrop-enter { animation: fade-in  0.2s ease forwards; }
+    .backdrop-exit  { animation: fade-out 0.2s ease forwards; }
+
+    /* Status badge glow */
+    .badge-ready       { background:rgba(34,197,94,0.15);  color:#4ade80; border:1px solid rgba(34,197,94,0.35); }
+    .badge-boarding    { background:rgba(0,180,255,0.15);  color:#00b4ff; border:1px solid rgba(0,180,255,0.35); }
+    .badge-leaving     { background:rgba(245,158,11,0.15); color:#fbbf24; border:1px solid rgba(245,158,11,0.35); }
+    .badge-inactive    { background:rgba(75,85,99,0.25);   color:#9ca3af; border:1px solid rgba(75,85,99,0.4); }
+    .badge-maintenance { background:rgba(244,63,94,0.15);  color:#f87171; border:1px solid rgba(244,63,94,0.35); }
+
+    /* Capacity bar fill colors */
+    .cap-high   { background: linear-gradient(90deg,#f43f5e,#f97316); }
+    .cap-mid    { background: linear-gradient(90deg,#facc15,#f59e0b); }
+    .cap-low    { background: linear-gradient(90deg,#00b4ff,#8b5cf6); }
+
+    /* Drawer info row */
+    .drawer-row { border-bottom: 1px solid rgba(255,255,255,0.05); padding: 10px 0; }
+    .drawer-row:last-child { border-bottom: none; }
+
+    /* Compound stat cards grid */
+    .compound-stat-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 12px;
+    }
+    @media (max-width: 900px) {
+      .compound-stat-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    /* Counter shimmer text */
+    @keyframes count-glow {
+      0%   { opacity: 0.4; letter-spacing: 0.05em; }
+      60%  { opacity: 1;   letter-spacing: 0.12em; }
+      100% { opacity: 1;   letter-spacing: 0.05em; }
+    }
+    .count-anim { animation: count-glow 0.8s ease forwards; }
+
+    /* Pulsing ring on active card */
+    @keyframes ring-pulse {
+      0%,100% { box-shadow: 0 0 0 0 rgba(0,180,255,0.5), 0 0 18px rgba(0,180,255,0.25); }
+      60%      { box-shadow: 0 0 0 6px rgba(0,180,255,0),  0 0 24px rgba(0,180,255,0.35); }
+    }
+    .card-pulse-ring { animation: ring-pulse 2.2s ease-in-out infinite; }
+
+    /* Admin table */
+    .admin-table { width:100%; border-collapse:separate; border-spacing:0 6px; }
+    .admin-table th { font-family:'JetBrains Mono',monospace; font-size:10px; text-transform:uppercase;
+      letter-spacing:.12em; color:#4b5a7a; padding:8px 12px; text-align:left; }
+    .admin-table td { padding:10px 12px; font-family:'JetBrains Mono',monospace; font-size:11px; color:#cbd5e1; }
+    .admin-table tr.bus-row td:first-child { border-radius:8px 0 0 8px; }
+    .admin-table tr.bus-row td:last-child  { border-radius:0 8px 8px 0; }
+    .admin-table tr.bus-row td { background:rgba(10,16,35,0.6); border-top:1px solid rgba(0,180,255,0.07);
+      border-bottom:1px solid rgba(0,180,255,0.07); transition:background .18s; }
+    .admin-table tr.bus-row:hover td { background:rgba(0,180,255,0.06); }
+
+    /* Modal overlay */
+    @keyframes modal-in  { from{opacity:0;transform:scale(.94)} to{opacity:1;transform:scale(1)} }
+    @keyframes modal-out { from{opacity:1;transform:scale(1)}   to{opacity:0;transform:scale(.94)} }
+    .modal-enter { animation: modal-in  .28s cubic-bezier(.22,1,.36,1) forwards; }
+    .modal-exit  { animation: modal-out .2s  ease forwards; }
+    .modal-bg-enter { animation: fade-in  .2s ease forwards; }
+    .modal-bg-exit  { animation: fade-out .2s ease forwards; }
+
+    /* Form inputs */
+    .admin-input {
+      width:100%; background:rgba(5,9,20,0.8); border:1px solid rgba(0,180,255,0.18);
+      border-radius:8px; padding:8px 12px; font-family:'JetBrains Mono',monospace;
+      font-size:12px; color:#e2e8f0; outline:none; transition:border-color .18s,box-shadow .18s;
+    }
+    .admin-input:focus { border-color:#00b4ff; box-shadow:0 0 0 2px rgba(0,180,255,0.18); }
+    .admin-input option { background:#0a1023; }
+
+    /* Icon action buttons */
+    .icon-btn { width:28px;height:28px;border-radius:7px;display:inline-flex;align-items:center;
+      justify-content:center;font-size:13px;transition:background .18s,transform .15s;cursor:pointer;border:none; }
+    .icon-btn:hover { transform:scale(1.12); }
+    .icon-btn-edit { background:rgba(0,180,255,0.12); color:#00b4ff; }
+    .icon-btn-edit:hover { background:rgba(0,180,255,0.25); }
+    .icon-btn-del  { background:rgba(244,63,94,0.12); color:#f87171; }
+    .icon-btn-del:hover  { background:rgba(244,63,94,0.25); }
+
+    /* ── Animated dot-grid background ── */
+    body::before {
+      content:'';
+      position:fixed; inset:0; z-index:0; pointer-events:none;
+      background-image: radial-gradient(circle, rgba(0,180,255,0.18) 1px, transparent 1px);
+      background-size: 32px 32px;
+      animation: grid-drift 18s linear infinite;
+      opacity: 0.28;
+    }
+    @keyframes grid-drift {
+      0%   { background-position: 0 0; }
+      100% { background-position: 32px 32px; }
+    }
+
+    /* ── Page transition ── */
+    @keyframes page-enter {
+      from { opacity:0; transform:translateY(14px) scale(0.985); }
+      to   { opacity:1; transform:translateY(0)    scale(1); }
+    }
+    @keyframes page-exit {
+      from { opacity:1; transform:translateY(0) scale(1); }
+      to   { opacity:0; transform:translateY(-8px) scale(0.99); }
+    }
+    .page-enter { animation: page-enter 0.32s cubic-bezier(0.22,1,0.36,1) forwards; }
+    .page-exit  { animation: page-exit  0.18s ease forwards; }
+
+    /* ── Skeleton loader ── */
+    @keyframes skel-wave {
+      0%   { background-position: -400px 0; }
+      100% { background-position:  400px 0; }
+    }
+    .skeleton {
+      background: linear-gradient(90deg,
+        rgba(0,180,255,0.06) 25%,
+        rgba(0,180,255,0.14) 50%,
+        rgba(0,180,255,0.06) 75%);
+      background-size: 400px 100%;
+      animation: skel-wave 1.4s ease-in-out infinite;
+      border-radius: 8px;
+    }
+
+    /* ── Mobile bottom nav ── */
+    #mobile-nav {
+      display: none;
+      position: fixed; bottom:0; left:0; right:0; z-index:200;
+      background: rgba(8,13,30,0.97);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-top: 1px solid rgba(0,180,255,0.15);
+      padding: 6px 0 12px;
+      box-shadow: 0 -4px 24px rgba(0,180,255,0.08);
+    }
+    .mob-nav-btn {
+      position: relative;
+      flex:1; display:flex; flex-direction:column; align-items:center;
+      gap:3px; padding:6px 2px; border:none; background:none; cursor:pointer;
+      transition: color 0.18s;
+    }
+    .mob-nav-btn span.icon { font-size:20px; line-height:1; }
+    .mob-nav-btn span.lbl  { font-family:'JetBrains Mono',monospace; font-size:9px; letter-spacing:.04em; }
+    .mob-nav-btn.active span.icon { filter: drop-shadow(0 0 6px #00b4ff); }
+
+    /* ── Responsive ── */
+    @media (max-width: 768px) {
+      #sidebar      { display: none !important; }
+      #mobile-nav   { display: flex !important; }
+      #main-content {
+        margin-left: 0 !important;
+        padding-bottom: 88px !important;
+        padding-left: 12px !important;
+        padding-right: 12px !important;
+      }
+      .compound-stat-grid { grid-template-columns: repeat(2,1fr) !important; }
+      .compound-svg-wrap  { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+      .compound-svg-wrap svg { min-width: 680px; }
+      .compound-side-panel {
+        position: fixed !important;
+        bottom: 76px; left: 0; right: 0;
+        max-height: 55vh; overflow-y: auto;
+        border-radius: 20px 20px 0 0 !important;
+        z-index: 90;
+      }
+      .admin-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+      .grid.grid-cols-3 { grid-template-columns: 1fr 1fr !important; }
+      .col-span-2       { grid-column: span 2 !important; }
+    }
+    @media (max-width: 480px) {
+      .compound-stat-grid { grid-template-columns: repeat(2,1fr) !important; }
+      .grid.grid-cols-3   { grid-template-columns: 1fr !important; }
+      .col-span-2         { grid-column: span 1 !important; }
+    }
+
+    /* Search yellow glow */
+    @keyframes yellow-glow {
+      0%,100% { filter: drop-shadow(0 0 4px #facc15) drop-shadow(0 0 10px #facc1588); }
+      50%      { filter: drop-shadow(0 0 12px #facc15) drop-shadow(0 0 28px #facc15cc); }
+    }
+    .slot-search-glow { animation: yellow-glow 0.9s ease-in-out infinite; }
+
+    /* Yellow selection ring */
+    @keyframes yellow-ring {
+      0%,100% { stroke-opacity:1;  stroke-width:3; }
+      50%      { stroke-opacity:0.3; stroke-width:7; }
+    }
+    .slot-ring-yellow { animation: yellow-ring 0.9s ease-in-out infinite; }
+
+    /* Toast */
+    @keyframes toast-in {
+      from { opacity:0; transform:translateY(20px) scale(0.95); }
+      to   { opacity:1; transform:translateY(0)   scale(1); }
+    }
+    @keyframes toast-out {
+      from { opacity:1; transform:translateY(0)   scale(1); }
+      to   { opacity:0; transform:translateY(-12px) scale(0.95); }
+    }
+    .toast-enter { animation: toast-in 0.3s ease forwards; }
+    .toast-exit  { animation: toast-out 0.3s ease forwards; }
+
+    /* Search input */
+    .search-input { background:rgba(10,16,35,0.85); color:#e2e8f0; outline:none; }
+    .search-input::placeholder { color:#4b5a7a; }
+    .search-input:focus { border-color:#facc15 !important; box-shadow:0 0 0 2px rgba(250,204,21,0.2); }
+
+    /* Dropdown */
+    .search-dropdown { background:rgba(10,16,35,0.97); border:1px solid rgba(250,204,21,0.25); backdrop-filter:blur(16px); }
+    .dropdown-item:hover { background:rgba(250,204,21,0.08); }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useEffect, useRef } = React;
+
+/* ─── Mock Data ─────────────────────────────────── */
+const NAV_ITEMS = [
+  { id:'dashboard', label:'Dashboard',   icon:'⬡' },
+  { id:'compound',  label:'Compound Map',icon:'⬟' },
+  { id:'fleet',     label:'Fleet',       icon:'⬠' },
+  { id:'routes',    label:'Routes',      icon:'⬠' },
+  { id:'analytics', label:'Analytics',   icon:'⬡' },
+  { id:'alerts',    label:'Alerts',      icon:'◈',  badge:3 },
+  { id:'admin',     label:'Admin',       icon:'⬡' },
+  { id:'settings',  label:'Settings',    icon:'⬡' },
+];
+
+/* ─── Compound Slot Data ─────────────────────────── */
+const COMPOUND_SLOTS = [
+  // Zone A
+  { id:'A1', bus:'BUS-01', driver:'Ramesh Kumar',   zone:'A', route:'JIET → City Centre',  departure:'06:30 AM', capacity:42, occupied:38, slotStatus:'ready' },
+  { id:'A2', bus:'BUS-02', driver:'Sunil Mehta',    zone:'A', route:'Campus Loop A',        departure:'07:00 AM', capacity:42, occupied:42, slotStatus:'boarding' },
+  { id:'A3', bus:'BUS-03', driver:'—',              zone:'A', route:'—',                   departure:'—',        capacity:42, occupied:0,  slotStatus:'maintenance' },
+  { id:'A4', bus:'BUS-04', driver:'Deepak Singh',   zone:'A', route:'Station → JIET',       departure:'07:15 AM', capacity:50, occupied:44, slotStatus:'leaving' },
+  { id:'A5', bus:'BUS-05', driver:'—',              zone:'A', route:'—',                   departure:'—',        capacity:42, occupied:0,  slotStatus:'inactive' },
+  // Zone B
+  { id:'B1', bus:'BUS-06', driver:'Ankit Sharma',   zone:'B', route:'Residency → Campus',  departure:'06:45 AM', capacity:42, occupied:30, slotStatus:'ready' },
+  { id:'B2', bus:'BUS-07', driver:'Vijay Yadav',    zone:'B', route:'JIET → City Centre',  departure:'07:30 AM', capacity:42, occupied:42, slotStatus:'boarding' },
+  { id:'B3', bus:'BUS-08', driver:'—',              zone:'B', route:'—',                   departure:'—',        capacity:42, occupied:0,  slotStatus:'inactive' },
+  { id:'B4', bus:'BUS-09', driver:'—',              zone:'B', route:'—',                   departure:'—',        capacity:50, occupied:0,  slotStatus:'maintenance' },
+  { id:'B5', bus:'BUS-10', driver:'Manoj Patel',    zone:'B', route:'Night Shuttle',        departure:'09:00 PM', capacity:42, occupied:18, slotStatus:'ready' },
+  // Zone C
+  { id:'C1', bus:'BUS-11', driver:'—',              zone:'C', route:'—',                   departure:'—',        capacity:42, occupied:0,  slotStatus:'inactive' },
+  { id:'C2', bus:'BUS-12', driver:'Ravi Verma',     zone:'C', route:'Station → JIET',       departure:'07:00 AM', capacity:50, occupied:47, slotStatus:'leaving' },
+  { id:'C3', bus:'BUS-13', driver:'Sanjay Tiwari',  zone:'C', route:'Campus Loop B',        departure:'07:45 AM', capacity:42, occupied:35, slotStatus:'boarding' },
+  { id:'C4', bus:'BUS-14', driver:'—',              zone:'C', route:'—',                   departure:'—',        capacity:42, occupied:0,  slotStatus:'inactive' },
+  { id:'C5', bus:'BUS-15', driver:'Harish Gupta',   zone:'C', route:'JIET → Residency',    departure:'08:00 AM', capacity:42, occupied:20, slotStatus:'ready' },
+];
+
+/* slot status → style map */
+const SLOT_STATUS_MAP = {
+  ready:       { label:'Ready',        cls:'badge-ready',       color:'#4ade80', glow:'rgba(34,197,94,0.45)'   },
+  boarding:    { label:'Boarding',     cls:'badge-boarding',    color:'#00b4ff', glow:'rgba(0,180,255,0.45)'   },
+  leaving:     { label:'Leaving Soon', cls:'badge-leaving',     color:'#fbbf24', glow:'rgba(245,158,11,0.45)'  },
+  inactive:    { label:'Inactive',     cls:'badge-inactive',    color:'#9ca3af', glow:'rgba(75,85,99,0.3)'     },
+  maintenance: { label:'Maintenance',  cls:'badge-maintenance', color:'#f87171', glow:'rgba(244,63,94,0.45)'   },
+};
+
+const STATS = [
+  { label:'Active Buses',  value:'24',   sub:'+2 today',   color:'#00b4ff', icon:'🚌' },
+  { label:'On-Time Rate',  value:'94.2%',sub:'↑ 1.3%',     color:'#8b5cf6', icon:'⏱' },
+  { label:'Passengers',    value:'3,847',sub:'Live count',  color:'#00b4ff', icon:'👥' },
+  { label:'Alerts',        value:'3',    sub:'Need action', color:'#f43f5e', icon:'⚠' },
+];
+
+const ROUTES = [
+  { id:'R-01', name:'JIET → City Centre', status:'active',   load:78, eta:'2 min',  bus:'BUS-04' },
+  { id:'R-02', name:'Residency → Campus', status:'active',   load:92, eta:'6 min',  bus:'BUS-07' },
+  { id:'R-03', name:'Station → JIET',     status:'delayed',  load:45, eta:'14 min', bus:'BUS-12' },
+  { id:'R-04', name:'Campus Loop A',      status:'active',   load:61, eta:'3 min',  bus:'BUS-02' },
+  { id:'R-05', name:'Night Shuttle',      status:'inactive', load:0,  eta:'—',      bus:'BUS-09' },
+];
+
+const ALERTS = [
+  { id:1, type:'warning', msg:'BUS-12 delayed — traffic on NH-62', time:'2m ago' },
+  { id:2, type:'error',   msg:'BUS-03 engine fault — pulled off route', time:'11m ago' },
+  { id:3, type:'info',    msg:'Route R-02 passenger overload', time:'18m ago' },
+];
+
+/* tiny sparkline data */
+const spark = () => Array.from({length:12}, () => Math.floor(Math.random()*60+20));
+const SPARKLINES = { trips: spark(), passengers: spark(), revenue: spark() };
+
+/* ─── Sub-Components ────────────────────────────── */
+
+function StatCard({ label, value, sub, color, icon }) {
+  return (
+    <div className="glass rounded-xl p-5 lift border-neon flex flex-col gap-2">
+      <div className="flex items-center justify-between">
+        <span className="font-heading text-sm tracking-widest uppercase" style={{color}}>{label}</span>
+        <span className="text-xl">{icon}</span>
+      </div>
+      <div className="font-heading text-4xl font-bold text-white glow-blue" style={{textShadow:`0 0 16px ${color}99`}}>
+        {value}
+      </div>
+      <div className="font-mono text-xs" style={{color:'#6b7280'}}>{sub}</div>
+    </div>
+  );
+}
+
+function MiniSparkline({ data, color }) {
+  const max = Math.max(...data);
+  const pts = data.map((v, i) => `${(i / (data.length-1)) * 120},${28 - (v/max)*26}`).join(' ');
+  return (
+    <svg width="120" height="30" viewBox="0 0 120 30" fill="none">
+      <polyline points={pts} stroke={color} strokeWidth="2" strokeLinejoin="round" fill="none" opacity="0.9"/>
+    </svg>
+  );
+}
+
+function RouteRow({ route }) {
+  const statusColor = { active:'#00b4ff', delayed:'#f59e0b', inactive:'#4b5563' }[route.status];
+  return (
+    <div className="glass rounded-lg px-4 py-3 flex items-center gap-4 lift border-neon">
+      <div className="flex flex-col min-w-[90px]">
+        <span className="font-mono text-xs text-gray-400">{route.id}</span>
+        <span className="font-heading font-semibold text-white text-sm leading-tight">{route.name}</span>
+      </div>
+      <div className="flex-1">
+        <div className="flex justify-between mb-1">
+          <span className="font-mono text-xs text-gray-400">Load</span>
+          <span className="font-mono text-xs" style={{color:statusColor}}>{route.load}%</span>
+        </div>
+        <div className="h-1.5 rounded-full bg-gray-800 overflow-hidden">
+          <div className="h-full rounded-full shimmer-bar" style={{width:`${route.load}%`}} />
+        </div>
+      </div>
+      <div className="text-center min-w-[50px]">
+        <span className="font-mono text-xs text-gray-400">ETA</span>
+        <div className="font-heading font-bold text-white text-sm">{route.eta}</div>
+      </div>
+      <div className="text-center min-w-[60px]">
+        <span className="font-mono text-xs" style={{color:statusColor}}>{route.bus}</span>
+      </div>
+      <div className="flex items-center gap-1.5">
+        <span className="w-2 h-2 rounded-full pulse" style={{backgroundColor:statusColor}}></span>
+        <span className="font-mono text-xs capitalize" style={{color:statusColor}}>{route.status}</span>
+      </div>
+    </div>
+  );
+}
+
+function AlertItem({ alert }) {
+  const colors = { warning:'#f59e0b', error:'#f43f5e', info:'#00b4ff' };
+  const icons  = { warning:'⚠', error:'✕', info:'ℹ' };
+  const c = colors[alert.type];
+  return (
+    <div className="flex items-start gap-3 py-3 border-b border-white/5 last:border-0">
+      <span className="mt-0.5 text-base" style={{color:c}}>{icons[alert.type]}</span>
+      <div className="flex-1">
+        <p className="font-mono text-xs text-gray-200 leading-snug">{alert.msg}</p>
+        <p className="font-mono text-xs text-gray-500 mt-0.5">{alert.time}</p>
+      </div>
+      <span className="font-mono text-xs px-2 py-0.5 rounded-full" style={{background:`${c}22`, color:c, border:`1px solid ${c}44`}}>
+        {alert.type}
+      </span>
+    </div>
+  );
+}
+
+function MetricCard({ label, data, color, value }) {
+  return (
+    <div className="glass rounded-xl p-4 lift border-neon flex flex-col gap-2">
+      <div className="flex items-center justify-between">
+        <span className="font-heading text-sm tracking-widest uppercase" style={{color}}>{label}</span>
+        <MiniSparkline data={data} color={color} />
+      </div>
+      <div className="font-heading text-2xl font-bold text-white">{value}</div>
+    </div>
+  );
+}
+
+/* ─── Live Clock ────────────────────────────────── */
+function LiveClock() {
+  const [t, setT] = useState(new Date());
+  useEffect(() => { const id = setInterval(() => setT(new Date()), 1000); return () => clearInterval(id); }, []);
+  return (
+    <span className="font-mono text-xs text-neon glow-blue">
+      {t.toLocaleTimeString('en-IN', {hour12:false})}
+    </span>
+  );
+}
+
+/* ─── Sidebar ───────────────────────────────────── */
+function Sidebar({ active, setActive }) {
+  /* Mobile bottom nav icons (subset of nav items) */
+  const MOB_NAV = NAV_ITEMS.slice(0, 5);
+  return (
+    <>
+      {/* ── Desktop sidebar ── */}
+      <aside id="sidebar" className="fixed top-0 left-0 h-screen glass flex flex-col z-50"
+        style={{borderRight:'1px solid rgba(0,180,255,0.1)'}}>
+
+        {/* Logo */}
+        <div className="px-6 py-5 border-b border-white/5 flex items-center gap-3">
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center shimmer-bar">
+            <span className="text-white font-heading font-bold text-sm">N</span>
+          </div>
+          <div>
+            <div className="font-heading font-bold text-white text-lg leading-none tracking-wide glow-blue">NexusOS</div>
+            <div className="font-mono text-xs text-gray-500">v2.4.1</div>
+          </div>
+        </div>
+
+        {/* System status */}
+        <div className="mx-4 mt-4 glass rounded-lg px-3 py-2 flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-neon pulse"></span>
+          <span className="font-mono text-xs text-gray-400">System <span className="text-neon">ONLINE</span></span>
+          <span className="ml-auto"><LiveClock /></span>
+        </div>
+
+        {/* Nav */}
+        <nav className="flex-1 overflow-y-auto mt-4 px-2 space-y-1">
+          {NAV_ITEMS.map(item => (
+            <button key={item.id}
+              onClick={() => setActive(item.id)}
+              className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-left transition-all duration-200 group ${active === item.id ? 'nav-active' : 'hover:bg-white/5'}`}>
+              <span className="text-base" style={{color: active===item.id ? '#00b4ff' : '#6b7280'}}>{item.icon}</span>
+              <span className={`font-heading font-semibold text-sm tracking-wide flex-1 ${active===item.id ? 'text-neon glow-blue' : 'text-gray-400 group-hover:text-white'}`}>
+                {item.label}
+              </span>
+              {item.badge && (
+                <span className="font-mono text-xs px-1.5 py-0.5 rounded-full bg-red-500/20 text-red-400 border border-red-500/30">
+                  {item.badge}
+                </span>
+              )}
+            </button>
+          ))}
+        </nav>
+
+        {/* User */}
+        <div className="px-4 py-4 border-t border-white/5 flex items-center gap-3">
+          <div className="w-8 h-8 rounded-full flex items-center justify-center text-white font-heading font-bold text-sm"
+            style={{background:'linear-gradient(135deg,#00b4ff,#8b5cf6)'}}>P</div>
+          <div className="flex-1 min-w-0">
+            <div className="font-heading text-sm font-semibold text-white truncate">Priyansh Rai</div>
+            <div className="font-mono text-xs text-gray-500">Admin</div>
+          </div>
+          <span className="font-mono text-xs text-gray-500 cursor-pointer hover:text-red-400 transition-colors">⏻</span>
+        </div>
+      </aside>
+
+      {/* ── Mobile bottom nav ── */}
+      <nav id="mobile-nav">
+        {MOB_NAV.map(item => (
+          <button key={item.id} className="mob-nav-btn"
+            style={{color: active===item.id ? '#00b4ff' : '#6b7280'}}
+            onClick={() => setActive(item.id)}>
+            <span className="icon">{item.icon}</span>
+            <span className="lbl">{item.label.split(' ')[0]}</span>
+            {item.badge && (
+              <span style={{position:'absolute',top:'2px',right:'calc(50% - 18px)',
+                background:'#f43f5e',borderRadius:'99px',fontSize:'8px',padding:'1px 4px',color:'#fff'}}>
+                {item.badge}
+              </span>
+            )}
+          </button>
+        ))}
+        {/* Admin shortcut */}
+        <button className="mob-nav-btn"
+          style={{color: active==='admin' ? '#00b4ff' : '#6b7280'}}
+          onClick={() => setActive('admin')}>
+          <span className="icon">⬡</span>
+          <span className="lbl">Admin</span>
+        </button>
+      </nav>
+    </>
+  );
+}
+
+/* ─── Main Dashboard Page ───────────────────────── */
+function DashboardPage() {
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="font-heading font-bold text-3xl text-white tracking-wide glow-blue">
+            Command Center
+          </h1>
+          <p className="font-mono text-xs text-gray-500 mt-1">Real-time fleet intelligence • JIET Campus</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="glass rounded-lg px-4 py-2 font-mono text-xs text-neon border-neon">
+            ⬡ Live Feed Active
+          </div>
+          <button className="px-4 py-2 rounded-lg font-heading font-semibold text-sm text-white shimmer-bar hover:opacity-90 transition-opacity">
+            + New Route
+          </button>
+        </div>
+      </div>
+
+      {/* Stat Cards */}
+      <div className="grid grid-cols-4 gap-4">
+        {STATS.map(s => <StatCard key={s.label} {...s} />)}
+      </div>
+
+      {/* Metric sparklines */}
+      <div className="grid grid-cols-3 gap-4">
+        <MetricCard label="Daily Trips"      data={SPARKLINES.trips}      color="#00b4ff" value="187" />
+        <MetricCard label="Passengers Today" data={SPARKLINES.passengers} color="#8b5cf6" value="12,430" />
+        <MetricCard label="Avg Delay"        data={SPARKLINES.revenue}    color="#f59e0b" value="2.3 min" />
+      </div>
+
+      {/* Routes + Alerts */}
+      <div className="grid grid-cols-3 gap-4">
+        {/* Routes list */}
+        <div className="col-span-2 glass rounded-xl p-5 border-neon">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-heading font-bold text-lg text-white tracking-wide">Live Routes</h2>
+            <span className="font-mono text-xs text-gray-500">{ROUTES.filter(r=>r.status==='active').length} active</span>
+          </div>
+          <div className="space-y-2">
+            {ROUTES.map(r => <RouteRow key={r.id} route={r} />)}
+          </div>
+        </div>
+
+        {/* Alerts */}
+        <div className="glass rounded-xl p-5 border-neon flex flex-col">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="font-heading font-bold text-lg text-white tracking-wide">Alerts</h2>
+            <span className="font-mono text-xs px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 border border-red-500/30">
+              {ALERTS.length} new
+            </span>
+          </div>
+          <div className="flex-1 overflow-y-auto">
+            {ALERTS.map(a => <AlertItem key={a.id} alert={a} />)}
+          </div>
+          <button className="mt-4 w-full py-2 rounded-lg font-heading font-semibold text-xs text-neon border border-neon/30 hover:bg-neon/10 transition-colors">
+            View All Alerts →
+          </button>
+        </div>
+      </div>
+
+      {/* Bottom: Bus Grid */}
+      <div className="glass rounded-xl p-5 border-neon">
+        <h2 className="font-heading font-bold text-lg text-white tracking-wide mb-4">Fleet Overview</h2>
+        <div className="grid grid-cols-6 gap-3">
+          {Array.from({length:12}, (_,i) => {
+            const statuses = ['active','active','active','delayed','inactive'];
+            const st = statuses[Math.floor(Math.random()*statuses.length)];
+            const c = {active:'#00b4ff',delayed:'#f59e0b',inactive:'#374151'}[st];
+            return (
+              <div key={i} className="glass rounded-lg p-3 lift border-neon text-center">
+                <div className="font-mono text-xs text-gray-400 mb-1">BUS-{String(i+1).padStart(2,'0')}</div>
+                <div className="text-2xl mb-1">🚌</div>
+                <div className="flex items-center justify-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full pulse" style={{background:c}}></span>
+                  <span className="font-mono text-xs capitalize" style={{color:c}}>{st}</span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Bus Slot SVG Element ───────────────────────── */
+function BusSlot({ slot, x, y, selected, highlighted, onClick }) {
+  const W = 72, H = 38, R = 5;
+  const isActive = slot.status === 'active';
+  const isHighlighted = highlighted === slot.id;
+  const fill   = isHighlighted ? 'rgba(250,204,21,0.18)' : isActive ? 'rgba(0,180,255,0.13)' : 'rgba(30,35,55,0.7)';
+  const stroke = isHighlighted ? '#facc15' : isActive ? '#00b4ff' : '#2d3555';
+  const textC  = isHighlighted ? '#facc15' : isActive ? '#00b4ff' : '#4b5a7a';
+  const glowId = `glow-${slot.id}`;
+
+  return (
+    <g className={`bus-slot${isHighlighted ? ' slot-search-glow' : ''}`}
+       onClick={() => onClick(slot)}
+       style={{transform:`translate(${x}px,${y}px)`}}>
+      <defs>
+        {(isActive || isHighlighted) && (
+          <filter id={glowId} x="-40%" y="-40%" width="180%" height="180%">
+            <feGaussianBlur stdDeviation={isHighlighted ? 6 : 4} result="blur"/>
+            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        )}
+      </defs>
+
+      {/* Selection ring — yellow for search match, blue for manual click */}
+      {isHighlighted && (
+        <rect x="-5" y="-5" width={W+10} height={H+10} rx={R+4}
+          fill="none" stroke="#facc15" className="slot-ring-yellow"/>
+      )}
+      {selected && !isHighlighted && (
+        <rect x="-4" y="-4" width={W+8} height={H+8} rx={R+3}
+          fill="none" stroke="#00b4ff" className="slot-ring"/>
+      )}
+
+      {/* Slot body */}
+      <rect x="0" y="0" width={W} height={H} rx={R}
+        fill={fill} stroke={stroke} strokeWidth="1.2"
+        filter={isActive ? `url(#${glowId})` : undefined}/>
+
+      {/* Bus icon line (top-view bus shape) */}
+      <rect x="8" y="7" width={W-16} height={H-14} rx="3"
+        fill={isActive ? 'rgba(0,180,255,0.25)' : 'rgba(255,255,255,0.04)'}
+        stroke={isActive ? '#00b4ff' : '#3a4060'} strokeWidth="1"/>
+      {/* Windshield */}
+      <rect x="11" y="9" width="14" height="8" rx="2"
+        fill={isActive ? 'rgba(0,180,255,0.5)' : 'rgba(255,255,255,0.07)'}/>
+      {/* Rear window */}
+      <rect x={W-25} y="9" width="14" height="8" rx="2"
+        fill={isActive ? 'rgba(0,180,255,0.3)' : 'rgba(255,255,255,0.04)'}/>
+
+      {/* Slot ID */}
+      <text x={W/2} y={H-7} textAnchor="middle"
+        fontFamily="'JetBrains Mono',monospace" fontSize="9" fill={textC} opacity="0.85">
+        {slot.id}
+      </text>
+      {/* Bus number */}
+      <text x={W/2} y="22" textAnchor="middle"
+        fontFamily="Rajdhani,sans-serif" fontSize="11" fontWeight="700" fill={isActive ? '#fff' : '#3a4a6a'}>
+        {slot.bus}
+      </text>
+    </g>
+  );
+}
+
+/* ─── useCountUp hook ───────────────────────────── */
+function useCountUp(target, duration=1100, delay=0) {
+  const [val, setVal] = useState(0);
+  useEffect(() => {
+    let raf, start, startVal = 0;
+    const step = (ts) => {
+      if (!start) start = ts + delay;
+      if (ts < start) { raf = requestAnimationFrame(step); return; }
+      const progress = Math.min((ts - start) / duration, 1);
+      const ease = 1 - Math.pow(1 - progress, 3); // cubic ease-out
+      setVal(Math.round(startVal + (target - startVal) * ease));
+      if (progress < 1) raf = requestAnimationFrame(step);
+    };
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+  }, [target, duration, delay]);
+  return val;
+}
+
+/* ─── CompoundStatCard ───────────────────────────── */
+function CompoundStatCard({ icon, label, value, suffix='', color, pulse=false, isLive=false, liveValue=null }) {
+  const count = useCountUp(typeof value === 'number' ? value : 0, 1200);
+  const display = isLive ? liveValue : (typeof value === 'number' ? count + suffix : value + suffix);
+  return (
+    <div
+      className={`glass rounded-xl p-4 flex flex-col gap-2 relative overflow-hidden ${pulse ? 'card-pulse-ring' : ''}`}
+      style={{ border: `1px solid ${color}30`, background: `rgba(8,13,30,0.75)` }}
+    >
+      {/* Subtle bg glow */}
+      <div style={{
+        position:'absolute', inset:0, pointerEvents:'none',
+        background:`radial-gradient(ellipse at top left, ${color}12 0%, transparent 65%)`
+      }}/>
+
+      {/* Icon + label */}
+      <div className="flex items-center justify-between relative z-10">
+        <span className="font-heading text-xs tracking-widest uppercase" style={{color, opacity:0.85}}>{label}</span>
+        <span className="text-lg" style={{filter:`drop-shadow(0 0 6px ${color})`}}>{icon}</span>
+      </div>
+
+      {/* Value */}
+      <div className="relative z-10 flex items-end gap-2">
+        <span
+          className="font-heading font-bold text-3xl count-anim"
+          style={{ color:'#fff', textShadow:`0 0 18px ${color}aa` }}
+        >
+          {display}
+        </span>
+        {pulse && (
+          <span className="w-2.5 h-2.5 rounded-full pulse mb-1" style={{background:color, boxShadow:`0 0 8px ${color}`}}></span>
+        )}
+      </div>
+
+      {/* Bottom accent line */}
+      <div className="relative z-10 h-0.5 rounded-full mt-1" style={{background:`linear-gradient(90deg, ${color}66, transparent)`}}/>
+    </div>
+  );
+}
+
+/* ─── Compound Map SVG ───────────────────────────── */
+/* ─── Toast Component ───────────────────────────── */
+function Toast({ toast }) {
+  if (!toast) return null;
+  const isSuccess = toast.type === 'success';
+  return (
+    <div className={`${toast.exiting ? 'toast-exit' : 'toast-enter'} fixed bottom-8 right-8 z-[9999] flex items-center gap-3 px-5 py-3 rounded-xl font-mono text-sm shadow-2xl`}
+      style={{
+        background: isSuccess ? 'rgba(16,44,24,0.97)' : 'rgba(44,10,10,0.97)',
+        border: `1px solid ${isSuccess ? '#22c55e' : '#f43f5e'}`,
+        color: isSuccess ? '#4ade80' : '#fb7185',
+        boxShadow: `0 0 24px ${isSuccess ? 'rgba(34,197,94,0.3)' : 'rgba(244,63,94,0.3)'}`
+      }}>
+      <span style={{fontSize:'18px'}}>{isSuccess ? '✓' : '✕'}</span>
+      <span>{toast.msg}</span>
+    </div>
+  );
+}
+
+function CompoundMap() {
+  const [selected,     setSelected]     = useState(null);
+  const [searchVal,    setSearchVal]    = useState('');
+  const [highlighted,  setHighlighted]  = useState(null);
+  const [suggestions,  setSuggestions]  = useState([]);
+  const [showDrop,     setShowDrop]     = useState(false);
+  const [toast,        setToast]        = useState(null);
+  const [notFound,     setNotFound]     = useState(false);
+  const [drawerSlot,   setDrawerSlot]   = useState(null);
+  const [drawerExiting,setDrawerExiting]= useState(false);
+  const inputRef    = useRef(null);
+  const toastTimer  = useRef(null);
+
+  /* ── show toast helper ── */
+  const showToast = (type, msg) => {
+    clearTimeout(toastTimer.current);
+    setToast({ type, msg, exiting: false });
+    toastTimer.current = setTimeout(() => {
+      setToast(t => t ? { ...t, exiting: true } : null);
+      setTimeout(() => setToast(null), 320);
+    }, 2800);
+  };
+
+  /* ── compute suggestions ── */
+  const computeSuggestions = (val) => {
+    if (!val.trim()) return [];
+    const q = val.trim().toUpperCase();
+    return COMPOUND_SLOTS.filter(s =>
+      s.bus.toUpperCase().includes(q) || s.id.toUpperCase().includes(q)
+    ).slice(0, 6);
+  };
+
+  const handleSearchChange = (e) => {
+    const val = e.target.value;
+    setSearchVal(val);
+    setNotFound(false);
+    setHighlighted(null);
+    const sugg = computeSuggestions(val);
+    setSuggestions(sugg);
+    setShowDrop(sugg.length > 0 && val.trim().length > 0);
+  };
+
+  const executeSearch = (val) => {
+    const q = val.trim().toUpperCase();
+    if (!q) return;
+    const match = COMPOUND_SLOTS.find(s =>
+      s.bus.toUpperCase() === q ||
+      s.id.toUpperCase()  === q ||
+      s.bus.toUpperCase().includes(q) ||
+      s.id.toUpperCase().includes(q)
+    );
+    setShowDrop(false);
+    if (match) {
+      setHighlighted(match.id);
+      setSelected(match);
+      setNotFound(false);
+      showToast('success', `Bus Found — ${match.bus} at slot ${match.id}`);
+    } else {
+      setHighlighted(null);
+      setSelected(null);
+      setNotFound(true);
+      showToast('error', `No match for "${val.trim()}"`);
+    }
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') executeSearch(searchVal);
+    if (e.key === 'Escape') { setShowDrop(false); setSearchVal(''); setHighlighted(null); setNotFound(false); }
+  };
+
+  const pickSuggestion = (slot) => {
+    setSearchVal(slot.bus);
+    setSuggestions([]);
+    setShowDrop(false);
+    setHighlighted(slot.id);
+    setSelected(slot);
+    setNotFound(false);
+    showToast('success', `Bus Found — ${slot.bus} at slot ${slot.id}`);
+  };
+
+  const clearSearch = () => {
+    setSearchVal(''); setHighlighted(null); setNotFound(false);
+    setSuggestions([]); setShowDrop(false); setSelected(null);
+    inputRef.current?.focus();
+  };
+
+  const handleClick = (slot) => {
+    setSelected(prev => prev?.id === slot.id ? null : slot);
+    setHighlighted(null);
+    setNotFound(false);
+    setDrawerSlot(slot);
+    setDrawerExiting(false);
+  };
+
+  const closeDrawer = () => {
+    setDrawerExiting(true);
+    setTimeout(() => { setDrawerSlot(null); setDrawerExiting(false); }, 260);
+  };
+
+  /* ── Compound stats derived from data ── */
+  const totalActive   = COMPOUND_SLOTS.filter(s => ['ready','boarding','leaving'].includes(s.slotStatus)).length;
+  const totalInactive = COMPOUND_SLOTS.filter(s => s.slotStatus === 'inactive').length;
+  const totalMaint    = COMPOUND_SLOTS.filter(s => s.slotStatus === 'maintenance').length;
+  const availSlots    = COMPOUND_SLOTS.length - totalActive;
+  const occupancyPct  = Math.round((totalActive / COMPOUND_SLOTS.length) * 100);
+  const [clock, setClock] = useState(new Date());
+  useEffect(() => { const id = setInterval(() => setClock(new Date()), 1000); return () => clearInterval(id); }, []);
+  const clockStr = clock.toLocaleTimeString('en-IN', {hour12:false});
+
+  const zoneA = COMPOUND_SLOTS.filter(s => s.zone === 'A');
+  const zoneB = COMPOUND_SLOTS.filter(s => s.zone === 'B');
+  const zoneC = COMPOUND_SLOTS.filter(s => s.zone === 'C');
+
+  const SW = 72, SH = 38, GAP = 10;
+  const zoneW = 5 * SW + 4 * GAP + 32; // 5 slots + padding
+  const SVG_W = 900, SVG_H = 480;
+
+  // Zone top-left origins
+  const zAx = 30, zAy = 80;
+  const zBx = 30, zBy = 210;
+  const zCx = 30, zCy = 340;
+
+  const slotX = (i) => i * (SW + GAP) + 16;
+
+  return (
+    <>
+    <div className="space-y-6" onClick={() => setShowDrop(false)}>
+      <Toast toast={toast} />
+
+      {/* Header row */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="font-heading font-bold text-3xl text-white tracking-wide glow-blue">Compound Map</h1>
+          <p className="font-mono text-xs text-gray-500 mt-1">Top-view • Zones A · B · C • 15 slots</p>
+        </div>
+        <div className="flex gap-3">
+          <div className="glass rounded-lg px-3 py-1.5 flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-neon"></span>
+            <span className="font-mono text-xs text-neon">Active</span>
+          </div>
+          <div className="glass rounded-lg px-3 py-1.5 flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full" style={{background:'#2d3555'}}></span>
+            <span className="font-mono text-xs text-gray-500">Inactive</span>
+          </div>
+        </div>
+      </div>
+
+      {/* ─ Search Bar ─ */}
+      <div className="relative" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center gap-2">
+          {/* Input wrapper */}
+          <div className="relative flex-1">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 font-mono text-sm"
+              style={{color: notFound ? '#f43f5e' : highlighted ? '#facc15' : '#4b5a7a'}}>⌕</span>
+            <input
+              id="compound-search"
+              ref={inputRef}
+              type="text"
+              value={searchVal}
+              onChange={handleSearchChange}
+              onKeyDown={handleKeyDown}
+              onFocus={() => searchVal.trim() && setShowDrop(suggestions.length > 0)}
+              placeholder="Search bus number or slot (e.g. BUS-07, A3)..."
+              className="search-input w-full pl-8 pr-10 py-2.5 rounded-xl font-mono text-sm transition-all"
+              style={{
+                border: `1px solid ${notFound ? '#f43f5e' : highlighted ? '#facc15' : 'rgba(0,180,255,0.2)'}`,
+                boxShadow: notFound ? '0 0 0 2px rgba(244,63,94,0.2)' : highlighted ? '0 0 0 2px rgba(250,204,21,0.2)' : 'none'
+              }}
+            />
+            {searchVal && (
+              <button onClick={clearSearch}
+                className="absolute right-3 top-1/2 -translate-y-1/2 font-mono text-xs text-gray-500 hover:text-white transition-colors">
+                ✕
+              </button>
+            )}
+          </div>
+
+          {/* Search button */}
+          <button
+            onClick={() => executeSearch(searchVal)}
+            className="px-5 py-2.5 rounded-xl font-heading font-semibold text-sm transition-all"
+            style={{
+              background: 'linear-gradient(135deg,#facc15,#f59e0b)',
+              color: '#0a0f1e',
+              boxShadow: '0 0 14px rgba(250,204,21,0.35)'
+            }}>
+            Find Bus
+          </button>
+        </div>
+
+        {/* Suggestions dropdown */}
+        {showDrop && suggestions.length > 0 && (
+          <div className="search-dropdown absolute top-full left-0 right-12 mt-1 rounded-xl overflow-hidden z-50 shadow-2xl">
+            {suggestions.map(s => (
+              <button key={s.id}
+                className="dropdown-item w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors"
+                onClick={() => pickSuggestion(s)}>
+                <span className="font-heading font-bold text-sm" style={{color: s.status==='active' ? '#00b4ff' : '#6b7280'}}>{s.bus}</span>
+                <span className="font-mono text-xs text-gray-500">slot {s.id}</span>
+                <span className="ml-auto font-mono text-xs px-2 py-0.5 rounded-full"
+                  style={{
+                    background: s.status==='active' ? 'rgba(0,180,255,0.12)' : 'rgba(55,65,81,0.3)',
+                    color: s.status==='active' ? '#00b4ff' : '#6b7280'
+                  }}>{s.status}</span>
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Not-found inline message */}
+        {notFound && (
+          <p className="font-mono text-xs mt-1.5" style={{color:'#f43f5e'}}>
+            ✕ No bus or slot matches “{searchVal}” — try BUS-01 through BUS-15 or slots A1–C5
+          </p>
+        )}
+      </div>
+
+      {/* ─ Stat Cards Row ─ */}
+      <div className="compound-stat-grid">
+        <CompoundStatCard
+          icon="🚌" label="Active Buses"  value={totalActive}    color="#00b4ff" pulse={true} />
+        <CompoundStatCard
+          icon="📊" label="Occupancy"     value={occupancyPct}   suffix="%" color="#8b5cf6" />
+        <CompoundStatCard
+          icon="⚠"  label="Delayed/Maint" value={totalMaint}     color="#f43f5e" />
+        <CompoundStatCard
+          icon="🅿"  label="Avail. Slots"  value={availSlots}     color="#4ade80" />
+        <CompoundStatCard
+          icon="🕐" label="Live Clock"    value={0} isLive={true} liveValue={clockStr} color="#facc15" />
+      </div>
+
+      <div className="grid grid-cols-3 gap-4">
+        {/* SVG Map */}
+        <div className="col-span-2 glass rounded-xl border-neon overflow-hidden compound-svg-wrap" style={{padding:'4px'}}>
+          <svg viewBox={`0 0 ${SVG_W} ${SVG_H}`} width="100%" style={{display:'block', background:'transparent'}}>
+            <defs>
+              <radialGradient id="bgGrad" cx="50%" cy="50%" r="70%">
+                <stop offset="0%" stopColor="#0d1a35" />
+                <stop offset="100%" stopColor="#05091a" />
+              </radialGradient>
+              <filter id="mapGlow">
+                <feGaussianBlur stdDeviation="6" result="b"/>
+                <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+              </filter>
+            </defs>
+
+            {/* Background */}
+            <rect width={SVG_W} height={SVG_H} fill="url(#bgGrad)" rx="12"/>
+
+            {/* Grid lines */}
+            {Array.from({length:20},(_,i)=>(
+              <line key={`h${i}`} x1="0" y1={i*25} x2={SVG_W} y2={i*25}
+                stroke="rgba(0,180,255,0.04)" strokeWidth="1"/>
+            ))}
+            {Array.from({length:37},(_,i)=>(
+              <line key={`v${i}`} x1={i*25} y1="0" x2={i*25} y2={SVG_H}
+                stroke="rgba(0,180,255,0.04)" strokeWidth="1"/>
+            ))}
+
+            {/* Main road horizontal */}
+            <rect x="0" y={SVG_H-70} width={SVG_W} height="44"
+              fill="rgba(0,180,255,0.04)" stroke="rgba(0,180,255,0.12)" strokeWidth="1"/>
+            {/* Road center dashes */}
+            <line x1="0" y1={SVG_H-48} x2={SVG_W} y2={SVG_H-48}
+              stroke="#f59e0b" strokeWidth="1.5" strokeDasharray="20 14"
+              className="road-dash"/>
+
+            {/* ENTRY gate */}
+            <g filter="url(#mapGlow)">
+              <rect x="40" y={SVG_H-70} width="80" height="44" rx="3"
+                fill="rgba(0,180,255,0.18)" stroke="#00b4ff" strokeWidth="1.5"/>
+              <text x="80" y={SVG_H-43} textAnchor="middle"
+                fontFamily="Rajdhani,sans-serif" fontSize="13" fontWeight="700" fill="#00b4ff">ENTRY</text>
+              {/* Gate barrier */}
+              <line x1="40" y1={SVG_H-70} x2="120" y2={SVG_H-70}
+                stroke="#00b4ff" strokeWidth="3" strokeLinecap="round"/>
+            </g>
+
+            {/* EXIT gate */}
+            <g filter="url(#mapGlow)">
+              <rect x={SVG_W-120} y={SVG_H-70} width="80" height="44" rx="3"
+                fill="rgba(139,92,246,0.18)" stroke="#8b5cf6" strokeWidth="1.5"/>
+              <text x={SVG_W-80} y={SVG_H-43} textAnchor="middle"
+                fontFamily="Rajdhani,sans-serif" fontSize="13" fontWeight="700" fill="#8b5cf6">EXIT</text>
+              <line x1={SVG_W-120} y1={SVG_H-70} x2={SVG_W-40} y2={SVG_H-70}
+                stroke="#8b5cf6" strokeWidth="3" strokeLinecap="round"/>
+            </g>
+
+            {/* Internal lane line */}
+            <line x1="0" y1={SVG_H-74} x2={SVG_W} y2={SVG_H-74}
+              stroke="rgba(0,180,255,0.15)" strokeWidth="1"/>
+
+            {/* Zone A */}
+            <rect x={zAx-8} y={zAy-28} width={zoneW} height={SH+52} rx="8"
+              fill="rgba(0,180,255,0.04)" stroke="rgba(0,180,255,0.18)" strokeWidth="1" strokeDasharray="6 4"/>
+            <text x={zAx-2} y={zAy-12} fontFamily="Rajdhani,sans-serif" fontSize="14" fontWeight="700"
+              fill="rgba(0,180,255,0.6)" letterSpacing="3">ZONE A</text>
+            {zoneA.map((slot,i) => (
+              <BusSlot key={slot.id} slot={slot}
+                x={zAx + slotX(i)} y={zAy}
+                selected={selected?.id === slot.id}
+                highlighted={highlighted}
+                onClick={handleClick}/>
+            ))}
+
+            {/* Zone B */}
+            <rect x={zBx-8} y={zBy-28} width={zoneW} height={SH+52} rx="8"
+              fill="rgba(139,92,246,0.04)" stroke="rgba(139,92,246,0.18)" strokeWidth="1" strokeDasharray="6 4"/>
+            <text x={zBx-2} y={zBy-12} fontFamily="Rajdhani,sans-serif" fontSize="14" fontWeight="700"
+              fill="rgba(139,92,246,0.6)" letterSpacing="3">ZONE B</text>
+            {zoneB.map((slot,i) => (
+              <BusSlot key={slot.id} slot={slot}
+                x={zBx + slotX(i)} y={zBy}
+                selected={selected?.id === slot.id}
+                highlighted={highlighted}
+                onClick={handleClick}/>
+            ))}
+
+            {/* Zone C */}
+            <rect x={zCx-8} y={zCy-28} width={zoneW} height={SH+52} rx="8"
+              fill="rgba(0,180,255,0.04)" stroke="rgba(0,180,255,0.18)" strokeWidth="1" strokeDasharray="6 4"/>
+            <text x={zCx-2} y={zCy-12} fontFamily="Rajdhani,sans-serif" fontSize="14" fontWeight="700"
+              fill="rgba(0,180,255,0.6)" letterSpacing="3">ZONE C</text>
+            {zoneC.map((slot,i) => (
+              <BusSlot key={slot.id} slot={slot}
+                x={zCx + slotX(i)} y={zCy}
+                selected={selected?.id === slot.id}
+                highlighted={highlighted}
+                onClick={handleClick}/>
+            ))}
+
+            {/* Compound title */}
+            <text x={SVG_W-20} y="24" textAnchor="end"
+              fontFamily="Rajdhani,sans-serif" fontSize="16" fontWeight="700"
+              fill="rgba(255,255,255,0.12)" letterSpacing="4">JIET BUS COMPOUND</text>
+          </svg>
+        </div>
+
+      </div>
+    </div>
+
+    {/* ─── Sliding Drawer ─── */}
+    {drawerSlot && (
+      <>
+        {/* Backdrop */}
+        <div
+          className={`${drawerExiting ? 'backdrop-exit' : 'backdrop-enter'} fixed inset-0 z-[200]`}
+          style={{background:'rgba(5,9,20,0.55)', backdropFilter:'blur(2px)'}}
+          onClick={closeDrawer}
+        />
+
+        {/* Drawer panel */}
+        {(() => {
+          const st = SLOT_STATUS_MAP[drawerSlot.slotStatus] || SLOT_STATUS_MAP.inactive;
+          const pct = Math.round((drawerSlot.occupied / drawerSlot.capacity) * 100);
+          const capCls = pct >= 90 ? 'cap-high' : pct >= 60 ? 'cap-mid' : 'cap-low';
+          return (
+            <div
+              className={`${drawerExiting ? 'drawer-exit' : 'drawer-enter'} fixed top-0 right-0 h-full z-[201] flex flex-col`}
+              style={{
+                width: '360px',
+                background: 'rgba(8,13,30,0.92)',
+                backdropFilter: 'blur(24px)',
+                WebkitBackdropFilter: 'blur(24px)',
+                borderLeft: `1px solid ${st.color}44`,
+                boxShadow: `-8px 0 48px ${st.glow}, -2px 0 0 ${st.color}22`,
+              }}
+            >
+              {/* Top accent bar */}
+              <div className="h-1 w-full" style={{background:`linear-gradient(90deg, ${st.color}, transparent)`}}/>
+
+              {/* Header */}
+              <div className="px-6 pt-5 pb-4 flex items-start justify-between"
+                style={{borderBottom:`1px solid ${st.color}22`}}>
+                <div>
+                  <div className="font-heading font-bold text-2xl text-white tracking-wide" style={{textShadow:`0 0 16px ${st.color}88`}}>
+                    {drawerSlot.bus}
+                  </div>
+                  <div className="font-mono text-xs text-gray-500 mt-0.5">Slot {drawerSlot.id} &middot; Zone {drawerSlot.zone}</div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className={`font-mono text-xs px-3 py-1 rounded-full ${st.cls}`}>{st.label}</span>
+                  <button onClick={closeDrawer}
+                    className="w-7 h-7 rounded-full flex items-center justify-center font-mono text-sm text-gray-400 hover:text-white hover:bg-white/10 transition-all">
+                    ✕
+                  </button>
+                </div>
+              </div>
+
+              {/* Body */}
+              <div className="flex-1 overflow-y-auto px-6 py-4 space-y-1">
+
+                {/* Status glow circle */}
+                <div className="flex justify-center py-4">
+                  <div className="relative flex items-center justify-center w-20 h-20 rounded-full"
+                    style={{background:`radial-gradient(circle, ${st.color}22 0%, transparent 70%)`, border:`1px solid ${st.color}44`}}>
+                    <span className="text-3xl">🚌</span>
+                    <span className="absolute bottom-1 right-1 w-3 h-3 rounded-full pulse"
+                      style={{background:st.color, boxShadow:`0 0 8px ${st.color}`}}></span>
+                  </div>
+                </div>
+
+                {/* Details rows */}
+                {[
+                  ['Driver',         drawerSlot.driver],
+                  ['Route',          drawerSlot.route],
+                  ['Departure',      drawerSlot.departure],
+                  ['Zone',           `Zone ${drawerSlot.zone}`],
+                  ['Slot',           drawerSlot.id],
+                  ['Capacity',       `${drawerSlot.capacity} seats`],
+                ].map(([k, v]) => (
+                  <div key={k} className="drawer-row flex justify-between items-center">
+                    <span className="font-mono text-xs text-gray-500">{k}</span>
+                    <span className="font-mono text-xs text-right" style={{color: k==='Driver' ? st.color : '#e2e8f0', maxWidth:'180px'}}>{v}</span>
+                  </div>
+                ))}
+
+                {/* Occupancy bar */}
+                <div className="pt-3">
+                  <div className="flex justify-between mb-1.5">
+                    <span className="font-mono text-xs text-gray-500">Occupancy</span>
+                    <span className="font-mono text-xs" style={{color: pct>=90?'#f87171': pct>=60?'#fbbf24':'#4ade80'}}>
+                      {drawerSlot.occupied}/{drawerSlot.capacity} ({pct}%)
+                    </span>
+                  </div>
+                  <div className="h-2 rounded-full bg-gray-800 overflow-hidden">
+                    <div className={`h-full rounded-full ${capCls} transition-all`} style={{width:`${pct}%`}}/>
+                  </div>
+                </div>
+
+                {/* Seat grid */}
+                <div className="pt-4">
+                  <div className="font-mono text-xs text-gray-500 mb-2">Seat Map (top-view)</div>
+                  <div className="grid gap-1" style={{gridTemplateColumns:'repeat(8,1fr)'}}>
+                    {Array.from({length: drawerSlot.capacity}, (_,i) => (
+                      <div key={i} className="h-4 rounded-sm" style={{
+                        background: i < drawerSlot.occupied
+                          ? pct>=90 ? 'rgba(244,63,94,0.6)' : pct>=60 ? 'rgba(250,204,21,0.5)' : `${st.color}55`
+                          : 'rgba(255,255,255,0.06)',
+                        border: `1px solid ${i < drawerSlot.occupied ? st.color+'33' : 'rgba(255,255,255,0.04)'}`
+                      }}/>
+                    ))}
+                  </div>
+                  <div className="flex gap-3 mt-2">
+                    <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-sm" style={{background:st.color+'55'}}/><span className="font-mono text-xs text-gray-500">Occupied</span></div>
+                    <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-sm" style={{background:'rgba(255,255,255,0.06)'}}/><span className="font-mono text-xs text-gray-500">Free</span></div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="px-6 py-4" style={{borderTop:`1px solid ${st.color}22`}}>
+                <button className="w-full py-2.5 rounded-xl font-heading font-semibold text-sm transition-all"
+                  style={{
+                    background: `linear-gradient(135deg, ${st.color}22, ${st.color}11)`,
+                    border: `1px solid ${st.color}44`,
+                    color: st.color,
+                    boxShadow: `0 0 16px ${st.glow}`
+                  }}>
+                  Track Live on Map →
+                </button>
+              </div>
+            </div>
+          );
+        })()}
+      </>
+    )}
+    </>
+  );
+}
+
+/* ─── Placeholder Page ──────────────────────────── */
+/* ─── Admin Panel ───────────────────────────────── */
+const ADMIN_STATUS_OPTS = ['ready','boarding','leaving','inactive','maintenance'];
+const EMPTY_BUS = { bus:'', driver:'', zone:'A', id:'', route:'', departure:'', slotStatus:'ready' };
+
+function AdminPage() {
+  const [buses,    setBuses]    = useState(() => JSON.parse(JSON.stringify(COMPOUND_SLOTS)));
+  const [filter,   setFilter]   = useState('');
+  const [modal,    setModal]    = useState(null);   // null | 'add' | 'edit'
+  const [form,     setForm]     = useState(EMPTY_BUS);
+  const [exiting,  setExiting]  = useState(false);
+  const [deleteId, setDeleteId] = useState(null);
+
+  const STATUS_CFG = SLOT_STATUS_MAP;
+
+  const filtered = buses.filter(b =>
+    [b.bus, b.driver, b.zone, b.id, b.route, b.slotStatus]
+      .some(v => v.toLowerCase().includes(filter.toLowerCase()))
+  );
+
+  const openAdd  = () => { setForm({...EMPTY_BUS}); setModal('add');  setExiting(false); };
+  const openEdit = (b) => { setForm({...b});         setModal('edit'); setExiting(false); };
+  const closeModal = () => {
+    setExiting(true);
+    setTimeout(() => { setModal(null); setExiting(false); }, 220);
+  };
+
+  const saveForm = () => {
+    if (modal === 'add') {
+      setBuses(prev => [...prev, {...form, capacity: form.capacity||42, occupied: form.occupied||0}]);
+    } else {
+      setBuses(prev => prev.map(b => b.id === form.id ? {...form} : b));
+    }
+    closeModal();
+  };
+
+  const deleteBus = (id) => setBuses(prev => prev.filter(b => b.id !== id));
+
+  const set = (k, v) => setForm(f => ({...f, [k]: v}));
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="font-heading font-bold text-3xl text-white tracking-wide glow-blue">Admin Panel</h1>
+          <p className="font-mono text-xs text-gray-500 mt-1">Manage fleet data · {buses.length} buses registered</p>
+        </div>
+        <button onClick={openAdd}
+          className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-heading font-semibold text-sm text-white transition-opacity hover:opacity-90"
+          style={{background:'linear-gradient(135deg,#00b4ff,#8b5cf6)',boxShadow:'0 0 18px rgba(0,180,255,0.3)'}}
+        >
+          <span className="text-base">＋</span> Add Bus
+        </button>
+      </div>
+
+      {/* Table card */}
+      <div className="glass rounded-xl border-neon p-5">
+        {/* Search */}
+        <div className="relative mb-5">
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-mono text-sm">⌕</span>
+          <input
+            type="text" value={filter} onChange={e => setFilter(e.target.value)}
+            placeholder="Filter by bus, driver, zone, route, status…"
+            className="admin-input pl-8"
+            style={{maxWidth:'420px'}}
+          />
+          {filter && (
+            <button onClick={() => setFilter('')}
+              className="absolute left-[408px] top-1/2 -translate-y-1/2 font-mono text-xs text-gray-500 hover:text-white">✕</button>
+          )}
+        </div>
+
+        {/* Table */}
+        <div className="admin-table-wrap" style={{overflowX:'auto'}}>
+          <table className="admin-table">
+            <thead>
+              <tr>
+                {['Bus No','Driver','Zone','Slot','Route','Status','Departure','Actions'].map(h => (
+                  <th key={h}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.length === 0 && (
+                <tr><td colSpan="8" className="text-center py-8 text-gray-600">No buses match your filter.</td></tr>
+              )}
+              {filtered.map(b => {
+                const st = STATUS_CFG[b.slotStatus] || STATUS_CFG.inactive;
+                return (
+                  <tr key={b.id} className="bus-row">
+                    <td><span className="font-heading font-bold text-white">{b.bus}</span></td>
+                    <td>{b.driver}</td>
+                    <td><span style={{color:'#00b4ff'}}>Zone {b.zone}</span></td>
+                    <td><span className="font-heading" style={{color:'#8b5cf6'}}>{b.id}</span></td>
+                    <td style={{maxWidth:'160px',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{b.route}</td>
+                    <td>
+                      <span className={`font-mono text-xs px-2.5 py-1 rounded-full ${st.cls}`}>{st.label}</span>
+                    </td>
+                    <td>{b.departure}</td>
+                    <td>
+                      <div className="flex items-center gap-2">
+                        <button className="icon-btn icon-btn-edit" title="Edit" onClick={() => openEdit(b)}>✎</button>
+                        <button className="icon-btn icon-btn-del"  title="Delete" onClick={() => deleteBus(b.id)}>✕</button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+        <div className="font-mono text-xs text-gray-600 mt-3 text-right">{filtered.length} of {buses.length} buses shown</div>
+      </div>
+
+      {/* Modal */}
+      {modal && (
+        <>
+          <div className={`${exiting?'modal-bg-exit':'modal-bg-enter'} fixed inset-0 z-[300]`}
+            style={{background:'rgba(5,9,20,0.72)',backdropFilter:'blur(4px)'}}
+            onClick={closeModal}/>
+          <div className={`${exiting?'modal-exit':'modal-enter'} fixed inset-0 z-[301] flex items-center justify-center p-4`}
+            onClick={closeModal}>
+            <div className="relative w-full max-w-lg rounded-2xl p-6 space-y-5"
+              style={{
+                background:'rgba(8,13,30,0.95)',
+                backdropFilter:'blur(28px)',
+                border:'1px solid rgba(0,180,255,0.22)',
+                boxShadow:'0 0 60px rgba(0,180,255,0.12), 0 24px 64px rgba(0,0,0,0.6)'
+              }}
+              onClick={e => e.stopPropagation()}>
+
+              {/* Modal top accent */}
+              <div className="absolute top-0 left-0 right-0 h-0.5 rounded-t-2xl shimmer-bar"/>
+
+              {/* Modal header */}
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="font-heading font-bold text-xl text-white">
+                    {modal==='add' ? '+ Add New Bus' : `Edit ${form.bus}`}
+                  </div>
+                  <div className="font-mono text-xs text-gray-500 mt-0.5">
+                    {modal==='add' ? 'Fill in the details below' : `Slot ${form.id} · Zone ${form.zone}`}
+                  </div>
+                </div>
+                <button onClick={closeModal}
+                  className="w-7 h-7 rounded-full flex items-center justify-center font-mono text-sm text-gray-400 hover:text-white hover:bg-white/10 transition-all">✕</button>
+              </div>
+
+              {/* Form fields */}
+              <div className="grid grid-cols-2 gap-3">
+                {[
+                  ['Bus Number', 'bus',       'text',   'BUS-16'],
+                  ['Driver Name','driver',    'text',   'Enter name'],
+                  ['Slot ID',    'id',        'text',   'D1'],
+                  ['Departure',  'departure', 'text',   '08:00 AM'],
+                ].map(([lbl,key,type,ph]) => (
+                  <div key={key} className="flex flex-col gap-1.5">
+                    <label className="font-mono text-xs text-gray-500">{lbl}</label>
+                    <input type={type} value={form[key]||''} placeholder={ph}
+                      onChange={e => set(key, e.target.value)} className="admin-input"/>
+                  </div>
+                ))}
+
+                {/* Zone select */}
+                <div className="flex flex-col gap-1.5">
+                  <label className="font-mono text-xs text-gray-500">Zone</label>
+                  <select value={form.zone} onChange={e => set('zone', e.target.value)} className="admin-input">
+                    {['A','B','C','D'].map(z => <option key={z} value={z}>Zone {z}</option>)}
+                  </select>
+                </div>
+
+                {/* Status select */}
+                <div className="flex flex-col gap-1.5">
+                  <label className="font-mono text-xs text-gray-500">Status</label>
+                  <select value={form.slotStatus} onChange={e => set('slotStatus', e.target.value)} className="admin-input">
+                    {ADMIN_STATUS_OPTS.map(s => (
+                      <option key={s} value={s}>{SLOT_STATUS_MAP[s]?.label || s}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Route — full width */}
+                <div className="col-span-2 flex flex-col gap-1.5">
+                  <label className="font-mono text-xs text-gray-500">Route</label>
+                  <input type="text" value={form.route||''} placeholder="e.g. JIET → City Centre"
+                    onChange={e => set('route', e.target.value)} className="admin-input"/>
+                </div>
+              </div>
+
+              {/* Status preview badge */}
+              <div className="flex items-center gap-2">
+                <span className="font-mono text-xs text-gray-500">Preview:</span>
+                <span className={`font-mono text-xs px-3 py-1 rounded-full ${(SLOT_STATUS_MAP[form.slotStatus]||SLOT_STATUS_MAP.inactive).cls}`}>
+                  {(SLOT_STATUS_MAP[form.slotStatus]||SLOT_STATUS_MAP.inactive).label}
+                </span>
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-3 pt-1">
+                <button onClick={closeModal}
+                  className="flex-1 py-2.5 rounded-xl font-heading font-semibold text-sm text-gray-400 border border-gray-700 hover:bg-white/5 transition-colors">
+                  Cancel
+                </button>
+                <button onClick={saveForm}
+                  className="flex-1 py-2.5 rounded-xl font-heading font-semibold text-sm text-white transition-opacity hover:opacity-90"
+                  style={{background:'linear-gradient(135deg,#00b4ff,#8b5cf6)',boxShadow:'0 0 16px rgba(0,180,255,0.3)'}}
+                >
+                  {modal==='add' ? 'Add Bus' : 'Save Changes'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+function PlaceholderPage({ title }) {
+  return (
+    <div className="flex flex-col items-center justify-center h-[60vh] gap-4">
+      <div className="font-heading text-5xl font-bold glow-purple" style={{color:'#8b5cf6'}}>{title}</div>
+      <p className="font-mono text-sm text-gray-500">This section is under construction.</p>
+      <div className="w-32 h-1 rounded-full shimmer-bar opacity-60" />
+    </div>
+  );
+}
+
+/* ─── App Root ──────────────────────────────────── */
+/* ── Skeleton loader component ── */
+function SkeletonPage() {
+  return (
+    <div className="space-y-6 animate-pulse">
+      <div className="flex items-center justify-between">
+        <div className="space-y-2">
+          <div className="skeleton h-8 w-56"></div>
+          <div className="skeleton h-3 w-36"></div>
+        </div>
+        <div className="skeleton h-9 w-28 rounded-xl"></div>
+      </div>
+      <div className="grid grid-cols-4 gap-4">
+        {[...Array(4)].map((_,i)=>(
+          <div key={i} className="glass rounded-xl p-5 space-y-3">
+            <div className="skeleton h-3 w-20"></div>
+            <div className="skeleton h-9 w-16"></div>
+            <div className="skeleton h-2 w-24"></div>
+          </div>
+        ))}
+      </div>
+      <div className="grid grid-cols-3 gap-4">
+        {[...Array(3)].map((_,i)=>(
+          <div key={i} className="glass rounded-xl p-5 space-y-3">
+            <div className="skeleton h-3 w-20"></div>
+            <div className="skeleton h-7 w-14"></div>
+          </div>
+        ))}
+      </div>
+      <div className="glass rounded-xl p-5 space-y-3">
+        {[...Array(4)].map((_,i)=>(
+          <div key={i} className="skeleton h-12 w-full rounded-lg"></div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ── PageTransition wrapper ── */
+function PageTransition({ pageKey, children }) {
+  const [display, setDisplay]       = useState(children);
+  const [animKey, setAnimKey]       = useState(pageKey);
+  const [phase,   setPhase]         = useState('enter');   // 'enter' | 'exit'
+  const [loading, setLoading]       = useState(true);
+  const prevKey = useRef(pageKey);
+
+  useEffect(() => {
+    // First mount — show skeleton for 500ms
+    const t = setTimeout(() => setLoading(false), 500);
+    return () => clearTimeout(t);
+  }, []);
+
+  useEffect(() => {
+    if (pageKey === prevKey.current) return;
+    // Exit current
+    setPhase('exit');
+    const t1 = setTimeout(() => {
+      setDisplay(children);
+      setAnimKey(pageKey);
+      setPhase('enter');
+      prevKey.current = pageKey;
+    }, 190);
+    return () => clearTimeout(t1);
+  }, [pageKey, children]);
+
+  if (loading) return <SkeletonPage />;
+
+  return (
+    <div key={animKey} className={phase === 'enter' ? 'page-enter' : 'page-exit'}>
+      {display}
+    </div>
+  );
+}
+
+function App() {
+  const [active,   setActive]   = useState('dashboard');
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+
+  useEffect(() => {
+    const onResize = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+
+  const handleNav = (id) => setActive(id);
+
+  const pageMap = {
+    dashboard: <DashboardPage />,
+    compound:  <CompoundMap />,
+    fleet:     <PlaceholderPage title="Fleet Manager" />,
+    routes:    <PlaceholderPage title="Route Planner" />,
+    analytics: <PlaceholderPage title="Analytics" />,
+    alerts:    <PlaceholderPage title="Alert Centre" />,
+    admin:     <AdminPage />,
+    settings:  <PlaceholderPage title="Settings" />,
+  };
+
+  return (
+    <div className="flex min-h-screen" style={{background:'#050914'}}>
+
+      {/* Fixed ambient glows */}
+      <div style={{
+        position:'fixed', top:'-200px', left:'-100px',
+        width:'600px', height:'600px',
+        background:'radial-gradient(circle, rgba(0,180,255,0.07) 0%, transparent 70%)',
+        pointerEvents:'none', zIndex:0
+      }}/>
+      <div style={{
+        position:'fixed', bottom:'-200px', right:'-100px',
+        width:'700px', height:'700px',
+        background:'radial-gradient(circle, rgba(139,92,246,0.07) 0%, transparent 70%)',
+        pointerEvents:'none', zIndex:0
+      }}/>
+
+      <Sidebar active={active} setActive={handleNav} />
+
+      {/* Main content — margin driven by React state, not CSS specificity */}
+      <main id="main-content" className="flex-1 overflow-y-auto relative z-10"
+        style={{
+          marginLeft: isMobile ? '0' : '230px',
+          paddingBottom: isMobile ? '88px' : '0',
+          transition: 'margin-left 0.3s ease'
+        }}>
+        <div className="max-w-7xl mx-auto p-4" style={{padding: isMobile ? '16px 12px' : '32px'}}>
+          <PageTransition pageKey={active}>
+            {pageMap[active]}
+          </PageTransition>
+        </div>
+      </main>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
